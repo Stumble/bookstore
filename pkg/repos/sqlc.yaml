@@ -1,0 +1,10 @@
+version: "2"
+sql:
+- schema: "books/schema.sql"
+  queries: "books/query.sql"
+  engine: "postgresql"
+  gen:
+    go:
+      sql_package: "wpgx"
+      package: "books"
+      out: "books"
