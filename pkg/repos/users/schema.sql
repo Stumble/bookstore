@@ -10,5 +10,5 @@ CREATE TABLE IF NOT EXISTS users (
 CREATE INDEX IF NOT EXISTS users_created_at_idx
     ON Users (CreatedAt);
 
-CREATE UNIQUE INDEX IF NOT EXISTS users_lower_name_idx
+CREATE UNIQUE INDEX IF NOT EXISTS users_lower_name_key
     ON Users ((lower(Name))) INCLUDE (ID);

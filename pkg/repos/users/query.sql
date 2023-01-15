@@ -1,3 +1,15 @@
+-- name: UpsertUsers :exec
+insert into users
+  (name, metadata, image)
+select
+        unnest(@name::VARCHAR(255)[]),
+        unnest(@metadata::JSON[]),
+        unnest(@image::TEXT[])
+on conflict ON CONSTRAINT users_lower_name_key do
+update set
+    metadata = excluded.metadata,
+    image = excluded.image;
+
 -- name: GetUserByID :one
 -- -- cache : 30s
 SELECT * FROM users
