@@ -2,7 +2,7 @@
 // versions:
 //   sqlc v1.16.0-65-g3c49d34e-wicked-fork
 
-package books
+package revenues
 
 import (
 	"context"
@@ -27,7 +27,7 @@ type WGConn interface {
 type ReadWithTtlFunc = func() (any, time.Duration, error)
 
 // BeforeDump allows you to edit result before dump.
-type BeforeDump func(m *Book)
+type BeforeDump func(m *ByBookRevenue)
 
 type Cache interface {
 	GetWithTtl(
@@ -61,24 +61,31 @@ func (q *Queries) WithCache(cache Cache) *Queries {
 }
 
 var Schema = `
-CREATE TYPE book_category AS ENUM (
-    'computer_science',
-    'philosophy',
-    'comic'
-);
+CREATE MATERIALIZED VIEW IF NOT EXISTS by_book_revenues AS
+  SELECT
+    books.id,
+    books.name,
+    books.category,
+    books.price,
+    books.created_at,
+    sum(orders.price) AS total,
+    sum(
+      CASE WHEN
+        (orders.created_at > now() - interval '30 day')
+      THEN orders.price ELSE 0 END
+    ) AS last30d
+  FROM
+    books
+    LEFT JOIN orders ON books.id = orders.book_id
+  GROUP BY
+      books.id;
 
-CREATE TABLE IF NOT EXISTS books (
-   id            BIGSERIAL           GENERATED ALWAYS AS IDENTITY,
-   name          VARCHAR(255)        NOT NULL,
-   description   VARCHAR(255)        NOT NULL,
-   metadata      JSON,
-   category      book_category       NOT NULL,
-   price         DECIMAL(10,2)       NOT NULL,
-   created_at    TIMESTAMP           NOT NULL DEFAULT NOW(),
-   updated_at    TIMESTAMP           NOT NULL DEFAULT NOW(),
-   CONSTRAINT books_id_pkey PRIMARY KEY (id)
-);
+CREATE UNIQUE INDEX IF NOT EXISTS v_books_id_unique_idx
+  ON v_books (id);
 
-CREATE INDEX IF NOT EXISTS books_name_idx ON books (name);
-CREATE INDEX IF NOT EXISTS books_category_id_idx ON books (category, id);
+CREATE UNIQUE INDEX IF NOT EXISTS v_books_total_volume_idx
+  ON v_books (total);
+
+CREATE UNIQUE INDEX IF NOT EXISTS v_books_total_last_30d_volume_idx
+  ON v_books (last30d);
 `

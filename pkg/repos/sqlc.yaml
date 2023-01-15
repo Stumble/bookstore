@@ -8,3 +8,28 @@ sql:
       sql_package: "wpgx"
       package: "books"
       out: "books"
+- schema: "users/schema.sql"
+  queries: "users/query.sql"
+  engine: "postgresql"
+  gen:
+    go:
+      sql_package: "wpgx"
+      package: "users"
+      out: "users"
+- schema: ["orders/schema.sql", "books/schema.sql", "users/schema.sql"]
+  queries: "orders/query.sql"
+  engine: "postgresql"
+  gen:
+    go:
+      sql_package: "wpgx"
+      package: "orders"
+      out: "orders"
+
+- schema: ["revenues/schema.sql", "orders/schema.sql", "books/schema.sql"]
+  queries: "revenues/query.sql"
+  engine: "postgresql"
+  gen:
+    go:
+      sql_package: "wpgx"
+      package: "revenues"
+      out: "revenues"

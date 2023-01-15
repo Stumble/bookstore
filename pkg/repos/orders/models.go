@@ -2,14 +2,12 @@
 // versions:
 //   sqlc v1.16.0-65-g3c49d34e-wicked-fork
 
-package books
+package orders
 
 import (
 	"database/sql/driver"
 	"fmt"
 	"time"
-
-	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type BookCategory string
@@ -73,13 +71,11 @@ func AllBookCategoryValues() []BookCategory {
 	}
 }
 
-type Book struct {
-	ID          int64          `json:"id"`
-	Name        string         `json:"name"`
-	Description string         `json:"description"`
-	Metadata    []byte         `json:"metadata"`
-	Category    BookCategory   `json:"category"`
-	Price       pgtype.Numeric `json:"price"`
-	CreatedAt   time.Time      `json:"created_at"`
-	UpdatedAt   time.Time      `json:"updated_at"`
+type Order struct {
+	ID        int32     `json:"id"`
+	UserID    *int32    `json:"user_id"`
+	BookID    *int32    `json:"book_id"`
+	Price     int64     `json:"price"`
+	CreatedAt time.Time `json:"created_at"`
+	IsDeleted bool      `json:"is_deleted"`
 }

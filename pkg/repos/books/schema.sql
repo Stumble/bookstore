@@ -1,4 +1,4 @@
-CREATE TYPE category AS ENUM (
+CREATE TYPE book_category AS ENUM (
     'computer_science',
     'philosophy',
     'comic'
@@ -9,7 +9,7 @@ CREATE TABLE IF NOT EXISTS books (
    name          VARCHAR(255)        NOT NULL,
    description   VARCHAR(255)        NOT NULL,
    metadata      JSON,
-   category      ItemCategory        NOT NULL,
+   category      book_category       NOT NULL,
    price         DECIMAL(10,2)       NOT NULL,
    created_at    TIMESTAMP           NOT NULL DEFAULT NOW(),
    updated_at    TIMESTAMP           NOT NULL DEFAULT NOW(),

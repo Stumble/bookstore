@@ -2,7 +2,7 @@
 // versions:
 //   sqlc v1.16.0-65-g3c49d34e-wicked-fork
 
-package books
+package revenues
 
 import (
 	"database/sql/driver"
@@ -73,13 +73,12 @@ func AllBookCategoryValues() []BookCategory {
 	}
 }
 
-type Book struct {
-	ID          int64          `json:"id"`
-	Name        string         `json:"name"`
-	Description string         `json:"description"`
-	Metadata    []byte         `json:"metadata"`
-	Category    BookCategory   `json:"category"`
-	Price       pgtype.Numeric `json:"price"`
-	CreatedAt   time.Time      `json:"created_at"`
-	UpdatedAt   time.Time      `json:"updated_at"`
+type ByBookRevenue struct {
+	ID        int64          `json:"id"`
+	Name      string         `json:"name"`
+	Category  BookCategory   `json:"category"`
+	Price     pgtype.Numeric `json:"price"`
+	CreatedAt time.Time      `json:"created_at"`
+	Total     int64          `json:"total"`
+	Last30d   int64          `json:"last30d"`
 }

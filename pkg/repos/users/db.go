@@ -2,7 +2,7 @@
 // versions:
 //   sqlc v1.16.0-65-g3c49d34e-wicked-fork
 
-package books
+package users
 
 import (
 	"context"
@@ -27,7 +27,7 @@ type WGConn interface {
 type ReadWithTtlFunc = func() (any, time.Duration, error)
 
 // BeforeDump allows you to edit result before dump.
-type BeforeDump func(m *Book)
+type BeforeDump func(m *User)
 
 type Cache interface {
 	GetWithTtl(
@@ -61,24 +61,18 @@ func (q *Queries) WithCache(cache Cache) *Queries {
 }
 
 var Schema = `
-CREATE TYPE book_category AS ENUM (
-    'computer_science',
-    'philosophy',
-    'comic'
+CREATE TABLE IF NOT EXISTS users (
+   id          INT          GENERATED ALWAYS AS IDENTITY,
+   name        VARCHAR(255) NOT NULL,
+   metadata    JSON,
+   image       TEXT         NOT NULL,
+   created_at  TIMESTAMP    NOT NULL DEFAULT NOW(),
+   CONSTRAINT users_id_pkey PRIMARY KEY (id)
 );
 
-CREATE TABLE IF NOT EXISTS books (
-   id            BIGSERIAL           GENERATED ALWAYS AS IDENTITY,
-   name          VARCHAR(255)        NOT NULL,
-   description   VARCHAR(255)        NOT NULL,
-   metadata      JSON,
-   category      book_category       NOT NULL,
-   price         DECIMAL(10,2)       NOT NULL,
-   created_at    TIMESTAMP           NOT NULL DEFAULT NOW(),
-   updated_at    TIMESTAMP           NOT NULL DEFAULT NOW(),
-   CONSTRAINT books_id_pkey PRIMARY KEY (id)
-);
+CREATE INDEX IF NOT EXISTS users_created_at_idx
+    ON Users (CreatedAt);
 
-CREATE INDEX IF NOT EXISTS books_name_idx ON books (name);
-CREATE INDEX IF NOT EXISTS books_category_id_idx ON books (category, id);
+CREATE UNIQUE INDEX IF NOT EXISTS users_lower_name_idx
+    ON Users ((lower(Name))) INCLUDE (ID);
 `
