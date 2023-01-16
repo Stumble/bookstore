@@ -16,6 +16,37 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
+const bulkUpdate = `-- name: BulkUpdate :exec
+UPDATE orders
+SET
+  price=temp.price,
+  book_id=temp.book_id
+FROM
+  (
+    SELECT
+      UNNEST($1::int[]) as id,
+      UNNEST($2::bigint[]) as price,
+      UNNEST($3::int[]) as book_id
+  ) AS temp
+WHERE
+  orders.id=temp.id
+`
+
+type BulkUpdateParams struct {
+	ID     []int32
+	Price  []int64
+	BookID []int32
+}
+
+func (q *Queries) BulkUpdate(ctx context.Context, arg BulkUpdateParams) error {
+	_, err := q.db.WExec(ctx, "BulkUpdate", bulkUpdate, arg.ID, arg.Price, arg.BookID)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 const createAuthor = `-- name: CreateAuthor :one
 INSERT INTO orders (
   user_id, book_id, price, is_deleted
@@ -216,6 +247,49 @@ type ListOrdersByUserParams struct {
 
 func (q *Queries) ListOrdersByUser(ctx context.Context, arg ListOrdersByUserParams) ([]Order, error) {
 	rows, err := q.db.WQuery(ctx, "ListOrdersByUser", listOrdersByUser, arg.UserID, arg.After, arg.First)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Order
+	for rows.Next() {
+		var i *Order = new(Order)
+		if err := rows.Scan(
+			&i.ID,
+			&i.UserID,
+			&i.BookID,
+			&i.Price,
+			&i.CreatedAt,
+			&i.IsDeleted,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, *i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+
+	return items, err
+}
+
+const listOrdersByUserAndBook = `-- name: ListOrdersByUserAndBook :many
+SELECT id, user_id, book_id, price, created_at, is_deleted FROM orders
+WHERE
+  (user_id, book_id) IN (
+  SELECT
+    UNNEST($1::int[]),
+    UNNEST($2::int[])
+)
+`
+
+type ListOrdersByUserAndBookParams struct {
+	UserID []int32
+	BookID []int32
+}
+
+func (q *Queries) ListOrdersByUserAndBook(ctx context.Context, arg ListOrdersByUserAndBookParams) ([]Order, error) {
+	rows, err := q.db.WQuery(ctx, "ListOrdersByUserAndBook", listOrdersByUserAndBook, arg.UserID, arg.BookID)
 	if err != nil {
 		return nil, err
 	}

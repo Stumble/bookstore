@@ -24,6 +24,30 @@ WHERE
 ORDER BY created_at DESC
 LIMIT @first;
 
+-- name: ListOrdersByUserAndBook :many
+SELECT * FROM orders
+WHERE
+  (user_id, book_id) IN (
+  SELECT
+    UNNEST(@user_id::int[]),
+    UNNEST(@book_id::int[])
+);
+
+-- name: BulkUpdate :exec
+UPDATE orders
+SET
+  price=temp.price,
+  book_id=temp.book_id
+FROM
+  (
+    SELECT
+      UNNEST(@id::int[]) as id,
+      UNNEST(@price::bigint[]) as price,
+      UNNEST(@book_id::int[]) as book_id
+  ) AS temp
+WHERE
+  orders.id=temp.id;
+
 -- name: CreateAuthor :one
 INSERT INTO orders (
   user_id, book_id, price, is_deleted
