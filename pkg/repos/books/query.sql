@@ -30,3 +30,15 @@ SET
   description = @description, metadata = @meta, price = @price, updated_at = NOW()
 WHERE
   id = @id;
+
+-- name: PartialUpdateByID :exec
+-- -- invalidate : [GetBookByID]
+UPDATE books
+SET
+  description = coalesce(sqlc.narg('description'), description),
+  metadata = coalesce(sqlc.narg('meta'), metadata),
+  price = coalesce(sqlc.narg('price'), price),
+  dummy_field = coalesce(sqlc.narg('dummy_field'), dummy_field),
+  updated_at = NOW()
+WHERE
+  id = @id;

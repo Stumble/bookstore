@@ -11,6 +11,7 @@ CREATE TABLE IF NOT EXISTS books (
    metadata      JSON,
    category      book_category       NOT NULL,
    price         DECIMAL(10,2)       NOT NULL,
+   dummy_field   INT,
    created_at    TIMESTAMP           NOT NULL DEFAULT NOW(),
    updated_at    TIMESTAMP           NOT NULL DEFAULT NOW(),
    CONSTRAINT books_id_pkey PRIMARY KEY (id)
