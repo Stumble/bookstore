@@ -2,16 +2,15 @@
 // versions:
 //   sqlc v2.0.1-wicked-fork
 
-package users
+package activities
 
 import (
 	"time"
 )
 
-type User struct {
+type Activity struct {
 	ID        int32     `json:"id"`
-	Name      string    `json:"name"`
-	Metadata  []byte    `json:"metadata"`
-	Image     string    `json:"image"`
+	Action    string    `json:"action"`
+	Parameter *string   `json:"parameter"`
 	CreatedAt time.Time `json:"created_at"`
 }

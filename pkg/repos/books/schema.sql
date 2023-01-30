@@ -5,12 +5,12 @@ CREATE TYPE book_category AS ENUM (
 );
 
 CREATE TABLE IF NOT EXISTS books (
-   id            BIGSERIAL           GENERATED ALWAYS AS IDENTITY,
+   id            SERIAL              NOT NULL,
    name          VARCHAR(255)        NOT NULL,
    description   VARCHAR(255)        NOT NULL,
    metadata      JSON,
    category      book_category       NOT NULL,
-   price         DECIMAL(10,2)       NOT NULL,
+   price         REAL                NOT NULL,
    dummy_field   INT,
    created_at    TIMESTAMP           NOT NULL DEFAULT NOW(),
    updated_at    TIMESTAMP           NOT NULL DEFAULT NOW(),

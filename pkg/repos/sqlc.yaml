@@ -1,5 +1,13 @@
 version: "2"
 sql:
+- schema: "activities/schema.sql"
+  queries: "activities/query.sql"
+  engine: "postgresql"
+  gen:
+    go:
+      sql_package: "wpgx"
+      package: "activities"
+      out: "activities"
 - schema: "books/schema.sql"
   queries: "books/query.sql"
   engine: "postgresql"

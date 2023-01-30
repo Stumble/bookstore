@@ -2,7 +2,7 @@
 // versions:
 //   sqlc v2.0.1-wicked-fork
 
-package orders
+package activities
 
 import (
 	"context"
@@ -27,7 +27,7 @@ type WGConn interface {
 type ReadWithTtlFunc = func() (any, time.Duration, error)
 
 // BeforeDump allows you to edit result before dump.
-type BeforeDump func(m *Order)
+type BeforeDump func(m *Activity)
 
 type Cache interface {
 	GetWithTtl(
@@ -61,15 +61,11 @@ func (q *Queries) WithCache(cache Cache) *Queries {
 }
 
 var Schema = `
-CREATE TABLE IF NOT EXISTS orders (
-   id         INT       GENERATED ALWAYS AS IDENTITY,
-   user_id    INT       references Users(ID) ON DELETE SET NULL,
-   book_id    INT       references Items(ID) ON DELETE SET NULL,
-   price      BIGINT    NOT NULL,
-   created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-   is_deleted BOOLEAN   NOT NULL,
-   CONSTRAINT orders_id_pkey PRIMARY KEY (id)
+CREATE TABLE IF NOT EXISTS activities (
+   id            INT                 GENERATED ALWAYS AS IDENTITY,
+   action        VARCHAR(255)        NOT NULL,
+   parameter     TEXT,
+   created_at    TIMESTAMP           NOT NULL DEFAULT NOW(),
+   CONSTRAINT activities_id_pkey PRIMARY KEY (id)
 );
-
-CREATE INDEX IF NOT EXISTS orders_item_id_idx ON orders (ItemID);
 `

@@ -1,4 +1,4 @@
--- name: BulkInsert :copyfrom
+-- name: Insert :exec
 INSERT INTO books (
    name, description, metadata, category, price
 ) VALUES (
@@ -18,6 +18,10 @@ LIMIT @first;
 -- name: GetAllBooks :many
 -- -- cache : 10m
 SELECT * FROM books;
+
+-- name: SearchBooks :many
+-- -- cache : 10m
+SELECT * FROM books WHERE name like $1;
 
 -- name: GetBookByID :one
 -- -- cache : 10m
