@@ -24,8 +24,8 @@ func (b booksTableSerde) Load(data []byte) error {
 
 func (b booksTableSerde) Dump() ([]byte, error) {
 	return b.books.Dump(context.Background(), func(m *books.Book) {
-		m.CreatedAt = time.Unix(0, 0)
-		m.UpdatedAt = time.Unix(0, 0)
+		m.CreatedAt = time.Unix(0, 0).UTC()
+		m.UpdatedAt = time.Unix(0, 0).UTC()
 	})
 }
 
@@ -39,7 +39,7 @@ func (a activitiesTableSerde) Load(data []byte) error {
 
 func (a activitiesTableSerde) Dump() ([]byte, error) {
 	return a.activities.Dump(context.Background(), func(m *activities.Activity) {
-		m.CreatedAt = time.Unix(0, 0)
+		m.CreatedAt = time.Unix(0, 0).UTC()
 	})
 }
 
