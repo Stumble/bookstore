@@ -20,6 +20,11 @@ WHERE id = $1 LIMIT 1;
 SELECT * FROM users
 WHERE Name = $1 LIMIT 1;
 
+-- name: IncorrectQuery :one
+-- -- cache : 5m
+SELECT * FROM users
+WHERE Name = sqlc.narg('name_pointer') LIMIT 1;
+
 -- name: ListUsers :many
 SELECT * FROM users
 WHERE id > @after

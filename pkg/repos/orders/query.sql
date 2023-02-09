@@ -1,5 +1,5 @@
--- name: GetOrderByID :one
--- -- cache : 10m
+-- name: ListOrders :one
+-- -- cache : 30s
 SELECT
   orders.ID,
   orders.user_id,
@@ -16,6 +16,25 @@ FROM
   INNER JOIN users ON orders.user_id = users.id
 WHERE
   orders.is_deleted = FALSE;
+
+-- name: GetOrderByID :one
+-- -- cache : 30s
+SELECT
+  orders.ID,
+  orders.user_id,
+  orders.book_id,
+  orders.created_at,
+  users.name AS user_name,
+  users.image AS user_thumbnail,
+  books.name AS book_name,
+  books.price As book_price,
+  books.metadata As book_metadata
+FROM
+  orders
+  INNER JOIN books ON orders.book_id = books.id
+  INNER JOIN users ON orders.user_id = users.id
+WHERE
+  orders.ID = $1;
 
 -- name: ListOrdersByUser :many
 SELECT * FROM orders
@@ -57,6 +76,7 @@ INSERT INTO orders (
 RETURNING *;
 
 -- name: DeleteOrder :exec
+-- ListOrdersByUser
 UPDATE orders
 SET
   is_deleted = TRUE
