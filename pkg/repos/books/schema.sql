@@ -12,8 +12,8 @@ CREATE TABLE IF NOT EXISTS books (
    category      book_category       NOT NULL,
    price         REAL                NOT NULL,
    dummy_field   INT,
-   created_at    TIMESTAMP           NOT NULL DEFAULT NOW(),
-   updated_at    TIMESTAMP           NOT NULL DEFAULT NOW(),
+   created_at    TIMESTAMPTZ           NOT NULL DEFAULT NOW(),
+   updated_at    TIMESTAMPTZ           NOT NULL DEFAULT NOW(),
    CONSTRAINT books_id_pkey PRIMARY KEY (id)
 );
 

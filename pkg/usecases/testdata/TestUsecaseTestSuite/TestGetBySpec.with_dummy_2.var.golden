@@ -1,0 +1,13 @@
+[
+  {
+    "id": 123,
+    "name": "a1-2",
+    "description": "xxxx",
+    "metadata": "W10=",
+    "category": "computer_science",
+    "price": 1.69,
+    "dummy_field": 999,
+    "created_at": "1970-01-01T00:00:00Z",
+    "updated_at": "1970-01-01T00:00:00Z"
+  }
+]

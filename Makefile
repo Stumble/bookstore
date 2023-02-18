@@ -7,21 +7,26 @@ POSTGRES_PASSWORD=my-secret
 POSTGRES_DB=$(NAME)_test_db
 POSTGRES_PORT=5432
 
+REDIS_DOCKER_NAME=$(NAME)-redis
+REDIS_PORT=6379
+
 sqlc:
 	cd pkg/repos && sqlc generate
 
 docker-postgres-start:
 	docker run -d --name $(POSTGRES_DOCKER_NAME) -e POSTGRES_PASSWORD=$(POSTGRES_PASSWORD) -e POSTGRES_DB=$(POSTGRES_DB) -p $(POSTGRES_PORT):5432 postgres:14.5
-
 docker-postgres-stop:
 	docker stop $(POSTGRES_DOCKER_NAME)
 	docker rm $(POSTGRES_DOCKER_NAME)
 
-test-start-all:
-	make docker-postgres-start
+docker-redis-start:
+	docker run -d=true --name $(REDIS_DOCKER_NAME) -p $(REDIS_PORT):6379 redis
+docker-redis-stop:
+	docker stop $(REDIS_DOCKER_NAME)
+	docker rm $(REDIS_DOCKER_NAME)
 
-test-stop-all:
-	make docker-postgres-stop
+test-start-all: docker-postgres-start docker-redis-start
+test-stop-all: docker-postgres-stop docker-redis-stop
 
 test-cmd:
 	export ENV=test && \

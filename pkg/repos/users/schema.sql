@@ -3,7 +3,7 @@ CREATE TABLE IF NOT EXISTS users (
    name        VARCHAR(255) NOT NULL,
    metadata    JSON,
    image       TEXT         NOT NULL,
-   created_at  TIMESTAMP    NOT NULL DEFAULT NOW(),
+   created_at  TIMESTAMPTZ    NOT NULL DEFAULT NOW(),
    CONSTRAINT users_id_pkey PRIMARY KEY (id)
 );
 

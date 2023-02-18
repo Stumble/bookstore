@@ -1,0 +1,35 @@
+[
+  {
+    "id": 1,
+    "name": "a1",
+    "description": "backend must read!",
+    "metadata": null,
+    "category": "computer_science",
+    "price": 388800.00,
+    "dummy_field": null,
+    "created_at": "1969-12-31T16:00:00-08:00",
+    "updated_at": "1969-12-31T16:00:00-08:00"
+  },
+  {
+    "id": 2,
+    "name": "b1",
+    "description": "very funny",
+    "metadata": null,
+    "category": "comic",
+    "price": 550.00,
+    "dummy_field": 2,
+    "created_at": "1969-12-31T16:00:00-08:00",
+    "updated_at": "1969-12-31T16:00:00-08:00"
+  },
+  {
+    "id": 3,
+    "name": "b2",
+    "description": "very funny",
+    "metadata": null,
+    "category": "comic",
+    "price": 550.00,
+    "dummy_field": null,
+    "created_at": "1969-12-31T16:00:00-08:00",
+    "updated_at": "1969-12-31T16:00:00-08:00"
+  }
+]

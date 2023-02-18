@@ -2,12 +2,16 @@ package usecases
 
 import (
 	"context"
+	"fmt"
 	// "math/big"
 	"testing"
 	"time"
 
 	// "github.com/jackc/pgx/v5/pgtype"
+	"github.com/coocood/freecache"
+	"github.com/go-redis/redis/v8"
 	"github.com/stretchr/testify/suite"
+	"github.com/stumble/dcache"
 	wpgxtestsuite "github.com/stumble/wpgx/testsuite"
 
 	"github.com/stumble/bookstore/pkg/repos/activities"
@@ -45,15 +49,36 @@ func (a activitiesTableSerde) Dump() ([]byte, error) {
 
 type usecaseTestSuite struct {
 	*wpgxtestsuite.WPgxTestSuite
-	usecase *Usecase
+	usecase   *Usecase
+	RedisConn redis.UniversalClient
+	FreeCache *freecache.Cache
+	DCache    *dcache.DCache
 }
 
 func newUsecaseTestSuite() *usecaseTestSuite {
+	redisClient := redis.NewClient(&redis.Options{
+		Addr:        "127.0.0.1:6379",
+		ReadTimeout: 3 * time.Second,
+		PoolSize:    50,
+		Password:    "",
+	})
+	if redisClient.Ping(context.Background()).Err() != nil {
+		panic(fmt.Errorf("redis connection failed to ping"))
+	}
+	memCache := freecache.NewCache(100 * 1024 * 1024)
+	dCache, err := dcache.NewDCache(
+		"test", redisClient, memCache, 100*time.Millisecond, true, true)
+	if err != nil {
+		panic(err)
+	}
 	return &usecaseTestSuite{
 		WPgxTestSuite: wpgxtestsuite.NewWPgxTestSuiteFromEnv("testdb", []string{
 			books.Schema,
 			activities.Schema,
 		}),
+		RedisConn: redisClient,
+		FreeCache: memCache,
+		DCache:    dCache,
 	}
 }
 
@@ -63,7 +88,9 @@ func TestUsecaseTestSuite(t *testing.T) {
 
 func (suite *usecaseTestSuite) SetupTest() {
 	suite.WPgxTestSuite.SetupTest()
-	suite.usecase = NewUsecase(suite.GetPool())
+	suite.Require().NoError(suite.RedisConn.FlushAll(context.Background()).Err())
+	suite.FreeCache.Clear()
+	suite.usecase = NewUsecase(suite.GetPool(), suite.DCache)
 }
 
 func (suite *usecaseTestSuite) TestBulkInsertBooks() {
@@ -123,4 +150,62 @@ func (suite *usecaseTestSuite) TestSearch() {
 				activities: suite.usecase.activities})
 		})
 	}
+}
+
+func (suite *usecaseTestSuite) TestGetBySpec() {
+	ctx := context.Background()
+	bookserde := booksTableSerde{books: suite.usecase.books}
+	suite.LoadState("TestUsecaseTestSuite/TestGetBySpec.books.input.json", bookserde)
+	cond := "b%"
+	rst, err := suite.usecase.books.GetBookBySpec(ctx, books.GetBookBySpecParams{
+		Name: &cond,
+	})
+	suite.Nil(err)
+	suite.GoldenVarJSON("with_names", rst)
+
+	d := int32(999)
+	rst, err = suite.usecase.books.GetBookBySpec(ctx, books.GetBookBySpecParams{
+		Dummy: &d,
+	})
+	suite.Nil(err)
+	suite.GoldenVarJSON("with_dummy", rst)
+
+	name := "a1%"
+	namePtr := &name
+	rst, err = suite.usecase.books.GetBookByNameMaybe(ctx, &name)
+	suite.Nil(err)
+	suite.GoldenVarJSON("by_name", rst)
+
+	err = suite.usecase.books.InsertWithInvalidate(ctx,
+		books.InsertWithInvalidateParams{
+			ID:          123,
+			Name:        "a1-2",
+			Description: "xxxx",
+			Metadata:    []byte("[]"),
+			Category:    books.BookCategoryComputerScience,
+			DummyField:  &d,
+			Price:       1.69,
+		},
+		&namePtr,
+		&books.GetBookBySpecParams{
+			Dummy: &d,
+		})
+	suite.Require().Nil(err)
+
+	rst, err = suite.usecase.books.GetBookBySpec(ctx, books.GetBookBySpecParams{
+		Dummy: &d,
+	})
+	suite.Nil(err)
+	suite.Equal(1, len(rst))
+	rst[0].CreatedAt = time.Unix(0, 0).UTC()
+	rst[0].UpdatedAt = time.Unix(0, 0).UTC()
+	suite.GoldenVarJSON("with_dummy_2", rst)
+
+	rst, err = suite.usecase.books.GetBookByNameMaybe(ctx, &name)
+	suite.Nil(err)
+	suite.Equal(2, len(rst))
+	rst[1].CreatedAt = time.Unix(0, 0).UTC()
+	rst[1].UpdatedAt = time.Unix(0, 0).UTC()
+	suite.GoldenVarJSON("by_name_2", rst)
+
 }

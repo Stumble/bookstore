@@ -6,6 +6,7 @@ import (
 
 	"github.com/stumble/bookstore/pkg/repos/activities"
 	"github.com/stumble/bookstore/pkg/repos/books"
+	"github.com/stumble/dcache"
 	"github.com/stumble/wpgx"
 )
 
@@ -16,10 +17,10 @@ type Usecase struct {
 	pool *wpgx.Pool
 }
 
-func NewUsecase(pool *wpgx.Pool) *Usecase {
+func NewUsecase(pool *wpgx.Pool, cache *dcache.DCache) *Usecase {
 	return &Usecase{
-		books:      books.New(pool.WConn(), nil),
-		activities: activities.New(pool.WConn(), nil),
+		books:      books.New(pool.WConn(), cache),
+		activities: activities.New(pool.WConn(), cache),
 		pool:       pool,
 	}
 }
