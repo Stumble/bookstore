@@ -23,7 +23,12 @@ type booksTableSerde struct {
 }
 
 func (b booksTableSerde) Load(data []byte) error {
-	return b.books.Load(context.Background(), data)
+	err := b.books.Load(context.Background(), data)
+	if err != nil {
+		return err
+	}
+	// reset books's id column to the next value.
+	return b.books.RefreshIDSerial(context.Background())
 }
 
 func (b booksTableSerde) Dump() ([]byte, error) {
@@ -161,6 +166,10 @@ func (suite *usecaseTestSuite) TestGetBySpec() {
 		Name: &cond,
 	})
 	suite.Nil(err)
+	for i := range rst {
+		rst[i].CreatedAt = time.Unix(0, 0).UTC()
+		rst[i].UpdatedAt = time.Unix(0, 0).UTC()
+	}
 	suite.GoldenVarJSON("with_names", rst)
 
 	d := int32(999)
@@ -168,6 +177,10 @@ func (suite *usecaseTestSuite) TestGetBySpec() {
 		Dummy: &d,
 	})
 	suite.Nil(err)
+	for i := range rst {
+		rst[i].CreatedAt = time.Unix(0, 0).UTC()
+		rst[i].UpdatedAt = time.Unix(0, 0).UTC()
+	}
 	suite.GoldenVarJSON("with_dummy", rst)
 
 	name := "a1%"
@@ -208,4 +221,24 @@ func (suite *usecaseTestSuite) TestGetBySpec() {
 	rst[1].UpdatedAt = time.Unix(0, 0).UTC()
 	suite.GoldenVarJSON("by_name_2", rst)
 
+}
+
+func (suite *usecaseTestSuite) TestListNewComicBook() {
+	// must init after the last SetupTest()
+	bookserde := booksTableSerde{books: suite.usecase.books}
+
+	// load state
+	suite.LoadState("TestUsecaseTestSuite/TestListNewComicBook.books.input.json", bookserde)
+
+	// run search
+	rst, err := suite.usecase.ListNewComicBookTx(context.Background(), "iron man 2", 10.88)
+
+	// check return value
+	suite.Nil(err)
+	suite.Equal(4, rst)
+
+	// verify db state
+	suite.Golden("books_table", bookserde)
+	suite.Golden("activitives_table", activitiesTableSerde{
+		activities: suite.usecase.activities})
 }

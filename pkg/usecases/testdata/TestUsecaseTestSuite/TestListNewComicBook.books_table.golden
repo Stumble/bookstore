@@ -1,0 +1,46 @@
+[
+  {
+    "id": 1,
+    "name": "a1",
+    "description": "backend must read!",
+    "metadata": null,
+    "category": "computer_science",
+    "price": 388800,
+    "dummy_field": null,
+    "created_at": "1970-01-01T00:00:00Z",
+    "updated_at": "1970-01-01T00:00:00Z"
+  },
+  {
+    "id": 2,
+    "name": "b1",
+    "description": "very funny",
+    "metadata": null,
+    "category": "comic",
+    "price": 550,
+    "dummy_field": null,
+    "created_at": "1970-01-01T00:00:00Z",
+    "updated_at": "1970-01-01T00:00:00Z"
+  },
+  {
+    "id": 3,
+    "name": "b2",
+    "description": "very funny",
+    "metadata": null,
+    "category": "comic",
+    "price": 550,
+    "dummy_field": null,
+    "created_at": "1970-01-01T00:00:00Z",
+    "updated_at": "1970-01-01T00:00:00Z"
+  },
+  {
+    "id": 4,
+    "name": "iron man 2",
+    "description": "book desc",
+    "metadata": "e30=",
+    "category": "comic",
+    "price": 0.1,
+    "dummy_field": null,
+    "created_at": "1970-01-01T00:00:00Z",
+    "updated_at": "1970-01-01T00:00:00Z"
+  }
+]

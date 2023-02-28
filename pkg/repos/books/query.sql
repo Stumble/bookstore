@@ -5,6 +5,18 @@ INSERT INTO books (
   $1, $2, $3, $4, $5
 );
 
+-- name: InsertAndReturnID :one
+INSERT INTO books (
+   name, description, metadata, category, price
+) VALUES (
+  $1, $2, $3, $4, $5
+) RETURNING id;
+
+
+-- name: RefreshIDSerial :exec
+SELECT setval(seq_name, (SELECT MAX(id) FROM books)+1, false)
+FROM PG_GET_SERIAL_SEQUENCE('books', 'id') as seq_name;
+
 -- name: ListByCategory :many
 SELECT *
 FROM

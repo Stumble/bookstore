@@ -251,6 +251,41 @@ func (q *Queries) Insert(ctx context.Context, arg InsertParams) error {
 	return nil
 }
 
+const insertAndReturnID = `-- name: InsertAndReturnID :one
+INSERT INTO books (
+   name, description, metadata, category, price
+) VALUES (
+  $1, $2, $3, $4, $5
+) RETURNING id
+`
+
+type InsertAndReturnIDParams struct {
+	Name        string
+	Description string
+	Metadata    []byte
+	Category    BookCategory
+	Price       float32
+}
+
+func (q *Queries) InsertAndReturnID(ctx context.Context, arg InsertAndReturnIDParams) (*int32, error) {
+	row := q.db.WQueryRow(ctx, "books.InsertAndReturnID", insertAndReturnID,
+		arg.Name,
+		arg.Description,
+		arg.Metadata,
+		arg.Category,
+		arg.Price,
+	)
+	var id *int32 = new(int32)
+	err := row.Scan(id)
+	if err == pgx.ErrNoRows {
+		return (*int32)(nil), nil
+	} else if err != nil {
+		return nil, err
+	}
+
+	return id, err
+}
+
 const insertWithInvalidate = `-- name: InsertWithInvalidate :exec
 INSERT INTO books (
    id, name, description, metadata, category, dummy_field, price
@@ -385,6 +420,20 @@ func (q *Queries) PartialUpdateByID(ctx context.Context, arg PartialUpdateByIDPa
 		arg.DummyField,
 		arg.ID,
 	)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+const refreshIDSerial = `-- name: RefreshIDSerial :exec
+SELECT setval(seq_name, (SELECT MAX(id) FROM books)+1, false)
+FROM PG_GET_SERIAL_SEQUENCE('books', 'id') as seq_name
+`
+
+func (q *Queries) RefreshIDSerial(ctx context.Context) error {
+	_, err := q.db.WExec(ctx, "books.RefreshIDSerial", refreshIDSerial)
 	if err != nil {
 		return err
 	}
