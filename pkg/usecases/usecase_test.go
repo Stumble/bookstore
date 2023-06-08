@@ -177,16 +177,17 @@ func (suite *usecaseTestSuite) TestGetBySpec() {
 		Dummy: &d,
 	})
 	suite.Nil(err)
-	for i := range rst {
-		rst[i].CreatedAt = time.Unix(0, 0).UTC()
-		rst[i].UpdatedAt = time.Unix(0, 0).UTC()
-	}
+	suite.Equal(0, len(rst))
 	suite.GoldenVarJSON("with_dummy", rst)
 
 	name := "a1%"
 	namePtr := &name
 	rst, err = suite.usecase.books.GetBookByNameMaybe(ctx, &name)
 	suite.Nil(err)
+	for i := range rst {
+		rst[i].CreatedAt = time.Unix(0, 0).UTC()
+		rst[i].UpdatedAt = time.Unix(0, 0).UTC()
+	}
 	suite.GoldenVarJSON("by_name", rst)
 
 	err = suite.usecase.books.InsertWithInvalidate(ctx,
@@ -210,15 +211,19 @@ func (suite *usecaseTestSuite) TestGetBySpec() {
 	})
 	suite.Nil(err)
 	suite.Equal(1, len(rst))
-	rst[0].CreatedAt = time.Unix(0, 0).UTC()
-	rst[0].UpdatedAt = time.Unix(0, 0).UTC()
+	for i := range rst {
+		rst[i].CreatedAt = time.Unix(0, 0).UTC()
+		rst[i].UpdatedAt = time.Unix(0, 0).UTC()
+	}
 	suite.GoldenVarJSON("with_dummy_2", rst)
 
 	rst, err = suite.usecase.books.GetBookByNameMaybe(ctx, &name)
 	suite.Nil(err)
 	suite.Equal(2, len(rst))
-	rst[1].CreatedAt = time.Unix(0, 0).UTC()
-	rst[1].UpdatedAt = time.Unix(0, 0).UTC()
+	for i := range rst {
+		rst[i].CreatedAt = time.Unix(0, 0).UTC()
+		rst[i].UpdatedAt = time.Unix(0, 0).UTC()
+	}
 	suite.GoldenVarJSON("by_name_2", rst)
 
 }

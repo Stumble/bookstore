@@ -3,22 +3,22 @@ module github.com/stumble/bookstore
 go 1.19
 
 require (
+	github.com/coocood/freecache v1.2.3
+	github.com/go-redis/redis/v8 v8.11.5
 	github.com/jackc/pgx/v5 v5.2.1-0.20230204133213-190c05cc24b0
 	github.com/rs/zerolog v1.28.0
 	github.com/stretchr/testify v1.8.1
-	github.com/stumble/dcache v0.1.0
-	github.com/stumble/wpgx v0.1.8
+	github.com/stumble/dcache v0.1.3
+	github.com/stumble/wpgx v0.1.9
 )
 
 require (
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cespare/xxhash/v2 v2.1.2 // indirect
-	github.com/coocood/freecache v1.2.3 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/dgryski/go-rendezvous v0.0.0-20200823014737-9f7001d12a5f // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
 	github.com/go-logr/stdr v1.2.2 // indirect
-	github.com/go-redis/redis/v8 v8.11.5 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20221227161230-091c0ba34f0a // indirect
