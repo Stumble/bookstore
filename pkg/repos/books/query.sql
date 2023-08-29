@@ -5,6 +5,13 @@ INSERT INTO books (
   $1, $2, $3, $4, $5
 );
 
+-- name: BulkInsertByCopyfrom :copyfrom
+INSERT INTO books (
+   name, description, metadata, category, price
+) VALUES (
+  $1, $2, $3, $4, $5
+);
+
 -- name: InsertAndReturnID :one
 INSERT INTO books (
    name, description, metadata, category, price
