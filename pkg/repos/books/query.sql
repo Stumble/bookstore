@@ -1,4 +1,5 @@
 -- name: Insert :exec
+-- -- invalidate : [GetAllBooks, GetAllBooks2]
 INSERT INTO books (
    name, description, metadata, category, price
 ) VALUES (
@@ -33,6 +34,10 @@ WHERE
 ORDER BY
   id
 LIMIT @first;
+
+-- name: GetAllBooks2 :many
+-- -- cache : 10m
+SELECT * FROM books;
 
 -- name: GetAllBooks :many
 -- -- cache : 10m
