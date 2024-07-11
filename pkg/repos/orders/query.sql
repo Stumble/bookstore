@@ -1,5 +1,6 @@
 -- name: ListOrders :one
 -- -- cache : 30s
+-- -- timeout : 1s
 SELECT
   orders.ID,
   orders.user_id,
@@ -19,6 +20,7 @@ WHERE
 
 -- name: GetOrderByID :one
 -- -- cache : 30s
+-- -- timeout : 1s
 SELECT
   orders.ID,
   orders.user_id,
@@ -37,6 +39,7 @@ WHERE
   orders.ID = $1;
 
 -- name: ListOrdersByUser :many
+-- -- timeout : 1s
 SELECT * FROM orders
 WHERE
   user_id = @user_id AND created_at < @after
@@ -44,6 +47,7 @@ ORDER BY created_at DESC
 LIMIT @first;
 
 -- name: ListOrdersByUserAndBook :many
+-- -- timeout : 1s
 SELECT * FROM orders
 WHERE
   (user_id, book_id) IN (
@@ -53,6 +57,7 @@ WHERE
 );
 
 -- name: BulkUpdate :exec
+-- -- timeout : 1s
 UPDATE orders
 SET
   price=temp.price,
@@ -68,6 +73,7 @@ WHERE
   orders.id=temp.id;
 
 -- name: CreateAuthor :one
+-- -- timeout : 1s
 INSERT INTO orders (
   user_id, book_id, price, is_deleted
 ) VALUES (
@@ -77,6 +83,7 @@ RETURNING *;
 
 -- name: DeleteOrder :exec
 -- ListOrdersByUser
+-- -- timeout : 1s
 UPDATE orders
 SET
   is_deleted = TRUE
@@ -86,6 +93,7 @@ WHERE
 -- name: ListOrdersByGender :many
 -- -- cache : 1m
 -- This is just an example for using type annotation for JSON field and 'with clause'.
+-- -- timeout : 1s
 WITH users_by_gender AS (
   SELECT * FROM users WHERE users.metadata->>'gender' = @gender::text
 )
