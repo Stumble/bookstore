@@ -17,6 +17,7 @@ INSERT INTO books (
 
 -- name: InsertAndReturnID :one
 -- -- timeout : 250ms
+-- -- invalidate : [GetAllBooks, GetAllBooks2]
 INSERT INTO books (
    name, description, metadata, category, price
 ) VALUES (

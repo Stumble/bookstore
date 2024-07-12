@@ -44,10 +44,11 @@ func (u *Usecase) Search(ctx context.Context, bookName string) (n int, err error
 	}()
 	go func() {
 		defer wg.Done()
+		act := "search"
 		_ = u.activities.Insert(ctx, activities.InsertParams{
-			Action:    "search",
+			Action:    act,
 			Parameter: &bookName,
-		})
+		}, &act)
 	}()
 	wg.Wait()
 	return
@@ -71,10 +72,11 @@ func (u *Usecase) ListNewComicBookTx(ctx context.Context, bookName string, price
 			return nil, fmt.Errorf("nil id?")
 		}
 		param := strconv.Itoa(int(*id))
+		action := "list a new comic book"
 		err = activitiesTx.Insert(ctx, activities.InsertParams{
-			Action:    "list a new comic book",
+			Action:    action,
 			Parameter: &param,
-		})
+		}, &action)
 		return int(*id), err
 	})
 	if err != nil {

@@ -235,12 +235,21 @@ func (suite *usecaseTestSuite) TestListNewComicBook() {
 	// load state
 	suite.LoadState("TestUsecaseTestSuite/TestListNewComicBook.books.input.json", bookserde)
 
+	allBooks, err := suite.usecase.books.GetAllBooks(context.Background())
+	suite.Require().Nil(err)
+	suite.Require().Equal(3, len(allBooks))
+
 	// run search
 	rst, err := suite.usecase.ListNewComicBookTx(context.Background(), "iron man 2", 10.88)
 
 	// check return value
 	suite.Nil(err)
 	suite.Equal(4, rst)
+
+	// test if invalidate cache works during a transaction.
+	updatedAllBooks, err := suite.usecase.books.GetAllBooks(context.Background())
+	suite.Require().Nil(err)
+	suite.Require().Equal(4, len(updatedAllBooks))
 
 	// verify db state
 	suite.Golden("books_table", bookserde)

@@ -5,3 +5,5 @@ CREATE TABLE IF NOT EXISTS activities (
    created_at    TIMESTAMPTZ           NOT NULL DEFAULT NOW(),
    CONSTRAINT activities_id_pkey PRIMARY KEY (id)
 );
+
+CREATE INDEX IF NOT EXISTS activities_action_idx ON activities (action);
