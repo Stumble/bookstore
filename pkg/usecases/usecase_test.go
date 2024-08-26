@@ -228,6 +228,15 @@ func (suite *usecaseTestSuite) TestGetBySpec() {
 
 }
 
+func (suite *usecaseTestSuite) TestNoPanicEvenDBErrorWhenNoCache() {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel() // cancel the context directly
+	// This should cause the db query to fail due to context cancellation.
+	b := suite.usecase.books.WithCache(nil)
+	_, err := b.SimpleCachedQuery(ctx)
+	suite.NotNil(err)
+}
+
 func (suite *usecaseTestSuite) TestListNewComicBook() {
 	// must init after the last SetupTest()
 	bookserde := booksTableSerde{books: suite.usecase.books}

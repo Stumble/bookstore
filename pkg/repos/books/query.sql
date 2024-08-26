@@ -15,6 +15,11 @@ INSERT INTO books (
   $1, $2, $3, $4, $5
 );
 
+-- name: SimpleCachedQuery :many
+-- -- cache : 10m
+-- -- timeout : 250ms
+SELECT * FROM books;
+
 -- name: InsertAndReturnID :one
 -- -- timeout : 250ms
 -- -- invalidate : [GetAllBooks, GetAllBooks2]
