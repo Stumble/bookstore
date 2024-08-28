@@ -11,7 +11,7 @@ require (
 	github.com/rs/zerolog v1.28.0
 	github.com/stretchr/testify v1.8.1
 	github.com/stumble/dcache v0.1.3
-	github.com/stumble/wpgx v0.3.0
+	github.com/stumble/wpgx v0.3.1
 )
 
 require (

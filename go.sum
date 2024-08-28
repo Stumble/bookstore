@@ -90,8 +90,8 @@ github.com/stretchr/testify v1.8.1 h1:w7B6lhMri9wdJUVmEZPGGhZzrYTPvgJArz7wNPgYKs
 github.com/stretchr/testify v1.8.1/go.mod h1:w2LPCIKwWwSfY2zedu0+kehJoqGctiVI29o6fzry7u4=
 github.com/stumble/dcache v0.1.3 h1:ONN+Y65XgOe/tZ7Xnu5keS58oDX3KFjs5xqTk+mJG7s=
 github.com/stumble/dcache v0.1.3/go.mod h1:NRYV3jq62VEFw0SleYWHK5y6nONZ+LFnLXTo927ilVk=
-github.com/stumble/wpgx v0.3.0 h1:8UZ+WfmE4CY2S3KIhZrWWm/GydfMKrA4WYllR/YZBzI=
-github.com/stumble/wpgx v0.3.0/go.mod h1:NzglxY/rDtz4lnR3CdP5HpMgL49Edq9Iftm9H6OKwEc=
+github.com/stumble/wpgx v0.3.1 h1:u56Xcj8gVBQSyk+nEf03HVqm3XUaytjsEjcEdDdkkXM=
+github.com/stumble/wpgx v0.3.1/go.mod h1:NzglxY/rDtz4lnR3CdP5HpMgL49Edq9Iftm9H6OKwEc=
 github.com/vmihailenco/msgpack/v5 v5.3.5 h1:5gO0H1iULLWGhs2H5tbAHIZTV8/cYafcFOr9znI5mJU=
 github.com/vmihailenco/msgpack/v5 v5.3.5/go.mod h1:7xyJ9e+0+9SaZT0Wt1RGleJXzli6Q/V5KbhBonMG9jc=
 github.com/vmihailenco/tagparser/v2 v2.0.0 h1:y09buUbR+b5aycVFQs/g70pqKVZNBmxwAhO7/IwNM9g=
