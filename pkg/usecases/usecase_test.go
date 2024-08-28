@@ -3,6 +3,8 @@ package usecases
 import (
 	"context"
 	"fmt"
+	"os"
+
 	// "math/big"
 	"testing"
 	"time"
@@ -12,6 +14,7 @@ import (
 	"github.com/go-redis/redis/v8"
 	"github.com/stretchr/testify/suite"
 	"github.com/stumble/dcache"
+	"github.com/stumble/wpgx"
 	wpgxtestsuite "github.com/stumble/wpgx/testsuite"
 
 	"github.com/stumble/bookstore/pkg/repos/activities"
@@ -76,6 +79,21 @@ func newUsecaseTestSuite() *usecaseTestSuite {
 	if err != nil {
 		panic(err)
 	}
+	// setup "fake" replica database in envvar by using default configuration
+	// that is almost the same as the primary database.
+	// In real world, you will need to set up a real replica and set their parameters
+	// in the envvar. For example:
+	// os.Setenv("POSTGRES_REPLICAPREFIXES", "R1,R2")
+	// os.Setenv("R1_NAME", "R1")
+	// os.Setenv("R1_USERNAME", "user1")
+	// os.Setenv("R1_PASSWORD", "password1")
+	// os.Setenv("R1_HOST", "192.168.0.1")
+	// ....
+	// os.Setenv("R2_NAME", "R2")
+	// ...
+	os.Setenv("POSTGRES_REPLICAPREFIXES", "R1")
+	os.Setenv("R1_NAME", "R1")
+	os.Setenv("R1_DBNAME", "testdb")
 	return &usecaseTestSuite{
 		WPgxTestSuite: wpgxtestsuite.NewWPgxTestSuiteFromEnv("testdb", []string{
 			books.Schema,
@@ -96,6 +114,45 @@ func (suite *usecaseTestSuite) SetupTest() {
 	suite.Require().NoError(suite.RedisConn.FlushAll(context.Background()).Err())
 	suite.FreeCache.Clear()
 	suite.usecase = NewUsecase(suite.GetPool(), suite.DCache)
+}
+
+func (suite *usecaseTestSuite) TestReplicaIsUp() {
+	suite.Require().Equal(1, len(suite.Pool.ReplicaPools()))
+	name := wpgx.ReplicaName("R1")
+
+	// access 1 ok
+	r1 := suite.Pool.ReplicaPools()[name]
+	suite.Require().NotNil(r1)
+	suite.Require().NoError(r1.Ping(context.Background()))
+
+	// access 2 ok
+	r1 = suite.Pool.MustReplicaPool(name)
+	suite.Require().NoError(r1.Ping(context.Background()))
+
+	// access 3 ok
+	r1, ok := suite.Pool.ReplicaPool(name)
+	suite.Require().True(ok)
+	suite.Require().NoError(r1.Ping(context.Background()))
+}
+
+func (suite *usecaseTestSuite) TestReadFromReplica() {
+	ctx := context.Background()
+	bookserde := booksTableSerde{books: suite.usecase.books}
+	suite.LoadState("TestUsecaseTestSuite/TestGetBySpec.books.input.json", bookserde)
+
+	replicaName := wpgx.ReplicaName("R1")
+	r1, err := suite.Pool.WQuerier(&replicaName)
+	suite.Require().Nil(err)
+	cond := "b%"
+	rst, err := suite.usecase.books.UseReplica(r1).GetBookBySpec(ctx, books.GetBookBySpecParams{
+		Name: &cond,
+	})
+	suite.Nil(err)
+	for i := range rst {
+		rst[i].CreatedAt = time.Unix(0, 0).UTC()
+		rst[i].UpdatedAt = time.Unix(0, 0).UTC()
+	}
+	suite.GoldenVarJSON("with_names", rst)
 }
 
 func (suite *usecaseTestSuite) TestBulkInsertBooks() {
