@@ -29,6 +29,14 @@ INSERT INTO books (
   $1, $2, $3, $4, $5
 ) RETURNING id;
 
+-- name: InsertReturnInvalidate :one
+-- -- timeout : 250ms
+-- -- invalidate : [GetBookByID]
+INSERT INTO books (
+   name, description, metadata, category, price
+) VALUES (
+  $1, $2, $3, $4, $5
+) RETURNING id;
 
 -- name: RefreshIDSerial :exec
 -- -- timeout : 300ms
