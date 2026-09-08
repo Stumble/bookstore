@@ -1,4 +1,5 @@
 GO := go
+SQLC ?= sqlc
 NAME := bookstore
 CGO_ENABLED = 0
 
@@ -12,9 +13,9 @@ REDIS_PORT=6379
 
 .PHONY: sqlc sqlc-verify
 sqlc:
-	cd pkg/repos && sqlc generate
+	cd pkg/repos && "$(SQLC)" generate
 sqlc-verify:
-	cd pkg/repos && sqlc diff
+	cd pkg/repos && "$(SQLC)" diff
 
 docker-postgres-start:
 	docker run -d --name $(POSTGRES_DOCKER_NAME) -e POSTGRES_PASSWORD=$(POSTGRES_PASSWORD) -e POSTGRES_DB=$(POSTGRES_DB) -p $(POSTGRES_PORT):5432 postgres:14.5
@@ -37,14 +38,12 @@ test-cmd:
 	export POSTGRES_APPNAME=bookstore && \
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -p 1 ./... -test.v
 
-test-update-golden-cmd: test-start-all
+test-update-golden-cmd:
 	export ENV=test && \
 	export POSTGRES_APPNAME=bookstore && \
 	CGO_ENABLED=$(CGO_ENABLED) $(GO) test -p 1 ./... -test.v -update
-	make test-stop-all
 
-test: test-start-all
-	make test-cmd && make test-stop-all || (make test-stop-all; exit 2)
+test: test-cmd
 
 .PHONY: lint lint-fix
 lint:

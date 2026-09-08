@@ -3,7 +3,7 @@
     "id": 123,
     "name": "a1-2",
     "description": "xxxx",
-    "metadata": "W10=",
+    "metadata": [],
     "category": "computer_science",
     "price": 1.69,
     "dummy_field": 999,
