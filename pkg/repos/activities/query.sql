@@ -11,3 +11,8 @@ INSERT INTO activities (
 -- -- timeout : 250ms
 -- -- cache : 1m
 select * from activities where action = @action;
+
+-- name: BulkInsert :copyfrom
+-- -- timeout: 1s
+INSERT INTO activities (action, parameter, created_at)
+VALUES ($1, $2, $3);

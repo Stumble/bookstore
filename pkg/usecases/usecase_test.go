@@ -2,8 +2,6 @@ package usecases
 
 import (
 	"context"
-	"fmt"
-	"os"
 
 	// "math/big"
 	"testing"
@@ -17,6 +15,7 @@ import (
 	"github.com/stumble/wpgx"
 	wpgxtestsuite "github.com/stumble/wpgx/testsuite"
 
+	"github.com/stumble/bookstore/internal/testenv"
 	"github.com/stumble/bookstore/pkg/repos/activities"
 	"github.com/stumble/bookstore/pkg/repos/books"
 )
@@ -63,39 +62,25 @@ type usecaseTestSuite struct {
 	DCache    *dcache.DCache
 }
 
-func newUsecaseTestSuite() *usecaseTestSuite {
+func newUsecaseTestSuite(t *testing.T) *usecaseTestSuite {
+	t.Helper()
+	env := testenv.Start(t)
 	redisClient := redis.NewClient(&redis.Options{
-		Addr:        "127.0.0.1:6379",
+		Addr:        env.RedisAddress,
 		ReadTimeout: 3 * time.Second,
 		PoolSize:    50,
 		Password:    "",
 	})
-	if redisClient.Ping(context.Background()).Err() != nil {
-		panic(fmt.Errorf("redis connection failed to ping"))
-	}
+	t.Cleanup(func() { _ = redisClient.Close() })
 	memCache := freecache.NewCache(100 * 1024 * 1024)
 	dCache, err := dcache.NewDCache(
 		"test", redisClient, memCache, 100*time.Millisecond, true, true)
 	if err != nil {
-		panic(err)
+		t.Fatal(err)
 	}
-	// setup "fake" replica database in envvar by using default configuration
-	// that is almost the same as the primary database.
-	// In real world, you will need to set up a real replica and set their parameters
-	// in the envvar. For example:
-	// os.Setenv("POSTGRES_REPLICAPREFIXES", "R1,R2")
-	// os.Setenv("R1_NAME", "R1")
-	// os.Setenv("R1_USERNAME", "user1")
-	// os.Setenv("R1_PASSWORD", "password1")
-	// os.Setenv("R1_HOST", "192.168.0.1")
-	// ....
-	// os.Setenv("R2_NAME", "R2")
-	// ...
-	os.Setenv("POSTGRES_REPLICAPREFIXES", "R1")
-	os.Setenv("R1_NAME", "R1")
-	os.Setenv("R1_DBNAME", "testdb")
+	t.Cleanup(dCache.Close)
 	return &usecaseTestSuite{
-		WPgxTestSuite: wpgxtestsuite.NewWPgxTestSuiteFromEnv("testdb", []string{
+		WPgxTestSuite: wpgxtestsuite.NewWPgxTestSuiteFromConfig(env.Postgres, "testdb", []string{
 			books.Schema,
 			activities.Schema,
 		}),
@@ -106,7 +91,7 @@ func newUsecaseTestSuite() *usecaseTestSuite {
 }
 
 func TestUsecaseTestSuite(t *testing.T) {
-	suite.Run(t, newUsecaseTestSuite())
+	suite.Run(t, newUsecaseTestSuite(t))
 }
 
 func (suite *usecaseTestSuite) SetupTest() {

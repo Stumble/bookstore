@@ -36,7 +36,7 @@
     "id": 4,
     "name": "iron man 2",
     "description": "book desc",
-    "metadata": "e30=",
+    "metadata": {},
     "category": "comic",
     "price": 0.1,
     "dummy_field": null,
