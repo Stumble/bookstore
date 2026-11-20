@@ -9,7 +9,7 @@ import (
 
 	// "github.com/jackc/pgx/v5/pgtype"
 	"github.com/coocood/freecache"
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/suite"
 	"github.com/stumble/dcache"
 	"github.com/stumble/wpgx"
@@ -80,10 +80,11 @@ func newUsecaseTestSuite(t *testing.T) *usecaseTestSuite {
 	}
 	t.Cleanup(dCache.Close)
 	return &usecaseTestSuite{
-		WPgxTestSuite: wpgxtestsuite.NewWPgxTestSuiteFromConfig(env.Postgres, "testdb", []string{
+		// The database name comes from env.Postgres.DBName ("testdb").
+		WPgxTestSuite: wpgxtestsuite.NewWPgxTestSuiteFromConfig(env.Postgres, []string{
 			books.Schema,
 			activities.Schema,
-		}),
+		}, false),
 		RedisConn: redisClient,
 		FreeCache: memCache,
 		DCache:    dCache,

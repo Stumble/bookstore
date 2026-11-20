@@ -8,6 +8,8 @@ package activities
 import (
 	"context"
 	"time"
+
+	"github.com/stumble/wpgx"
 )
 
 // iteratorForBulkInsert implements pgx.CopyFromSource.
@@ -42,8 +44,7 @@ func (r iteratorForBulkInsert) Err() error {
 
 // -- timeout: 1s
 func (q *Queries) BulkInsert(ctx context.Context, arg []BulkInsertParams) (int64, error) {
-	ctx, cancel := context.WithTimeout(ctx, time.Millisecond*1000)
-	defer cancel()
+	ctx = wpgx.WithDBTimeout(ctx, "activities.BulkInsert", time.Millisecond*1000)
 	q.db.CountIntent("activities.BulkInsert")
 	return q.db.WCopyFrom(ctx, "activities.BulkInsert", []string{"activities"}, []string{"action", "parameter", "created_at"}, &iteratorForBulkInsert{rows: arg})
 }

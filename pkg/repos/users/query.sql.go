@@ -17,6 +17,7 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/rs/zerolog/log"
+	"github.com/stumble/wpgx"
 )
 
 const complicated = `-- name: Complicated :one
@@ -50,8 +51,7 @@ func (q *ReadOnlyQueries) Complicated(ctx context.Context, n int32) (*int32, err
 }
 
 func _Complicated(ctx context.Context, q CacheQuerierConn, n int32) (*int32, error) {
-	qctx, cancel := context.WithTimeout(ctx, time.Millisecond*1000)
-	defer cancel()
+	qctx := wpgx.WithDBTimeout(ctx, "users.Complicated", time.Millisecond*1000)
 	q.GetConn().CountIntent("users.Complicated")
 	dbRead := func() (any, time.Duration, error) {
 		cacheDuration := time.Duration(time.Millisecond * 60000)
@@ -99,8 +99,7 @@ func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams, getUserB
 }
 
 func _CreateUser(ctx context.Context, q CacheWGConn, arg CreateUserParams, getUserByID *int32, getUserByName *string) (*User, error) {
-	qctx, cancel := context.WithTimeout(ctx, time.Millisecond*1000)
-	defer cancel()
+	qctx := wpgx.WithDBTimeout(ctx, "users.CreateUser", time.Millisecond*1000)
 	row := q.GetConn().WQueryRow(qctx, "users.CreateUser", createUser, arg.Name, arg.Metadata, arg.Image)
 	var i *User = new(User)
 	err := row.Scan(
@@ -163,8 +162,7 @@ WHERE NAME LIKE $1
 // -- invalidate : [GetUserByID]
 // -- timeout : 1s
 func (q *Queries) DeleteBadUsers(ctx context.Context, name string, getUserByID *int32) (pgconn.CommandTag, error) {
-	qctx, cancel := context.WithTimeout(ctx, time.Millisecond*1000)
-	defer cancel()
+	qctx := wpgx.WithDBTimeout(ctx, "users.DeleteBadUsers", time.Millisecond*1000)
 	rv, err := q.db.WExec(qctx, "users.DeleteBadUsers", deleteBadUsers, name)
 	if err != nil {
 		return rv, err
@@ -204,8 +202,7 @@ WHERE id = $1
 // -- invalidate : [GetUserByID, GetUserByName]
 // -- timeout : 1s
 func (q *Queries) DeleteUser(ctx context.Context, id int32, getUserByID *int32, getUserByName *string) error {
-	qctx, cancel := context.WithTimeout(ctx, time.Millisecond*1000)
-	defer cancel()
+	qctx := wpgx.WithDBTimeout(ctx, "users.DeleteUser", time.Millisecond*1000)
 	_, err := q.db.WExec(qctx, "users.DeleteUser", deleteUser, id)
 	if err != nil {
 		return err
@@ -265,8 +262,7 @@ func (q *ReadOnlyQueries) GetUserByID(ctx context.Context, id int32) (*User, err
 }
 
 func _GetUserByID(ctx context.Context, q CacheQuerierConn, id int32) (*User, error) {
-	qctx, cancel := context.WithTimeout(ctx, time.Millisecond*1000)
-	defer cancel()
+	qctx := wpgx.WithDBTimeout(ctx, "users.GetUserByID", time.Millisecond*1000)
 	q.GetConn().CountIntent("users.GetUserByID")
 	dbRead := func() (any, time.Duration, error) {
 		cacheDuration := time.Duration(time.Millisecond * 30000)
@@ -314,8 +310,7 @@ func (q *ReadOnlyQueries) GetUserByName(ctx context.Context, name string) (*User
 }
 
 func _GetUserByName(ctx context.Context, q CacheQuerierConn, name string) (*User, error) {
-	qctx, cancel := context.WithTimeout(ctx, time.Millisecond*1000)
-	defer cancel()
+	qctx := wpgx.WithDBTimeout(ctx, "users.GetUserByName", time.Millisecond*1000)
 	q.GetConn().CountIntent("users.GetUserByName")
 	dbRead := func() (any, time.Duration, error) {
 		cacheDuration := time.Duration(time.Millisecond * 300000)
@@ -363,8 +358,7 @@ func (q *ReadOnlyQueries) IncorrectQuery(ctx context.Context, namePointer *strin
 }
 
 func _IncorrectQuery(ctx context.Context, q CacheQuerierConn, namePointer *string) (*User, error) {
-	qctx, cancel := context.WithTimeout(ctx, time.Millisecond*1000)
-	defer cancel()
+	qctx := wpgx.WithDBTimeout(ctx, "users.IncorrectQuery", time.Millisecond*1000)
 	q.GetConn().CountIntent("users.IncorrectQuery")
 	dbRead := func() (any, time.Duration, error) {
 		cacheDuration := time.Duration(time.Millisecond * 300000)
@@ -423,8 +417,7 @@ func (q *ReadOnlyQueries) ListUserNames(ctx context.Context, arg ListUserNamesPa
 }
 
 func _ListUserNames(ctx context.Context, q CacheQuerierConn, arg ListUserNamesParams) ([]ListUserNamesRow, error) {
-	qctx, cancel := context.WithTimeout(ctx, time.Millisecond*1000)
-	defer cancel()
+	qctx := wpgx.WithDBTimeout(ctx, "users.ListUserNames", time.Millisecond*1000)
 	q.GetConn().CountIntent("users.ListUserNames")
 	rows, err := q.GetConn().WQuery(qctx, "users.ListUserNames", listUserNames, arg.After, arg.First)
 	if err != nil {
@@ -468,8 +461,7 @@ func (q *ReadOnlyQueries) ListUsers(ctx context.Context, arg ListUsersParams) ([
 }
 
 func _ListUsers(ctx context.Context, q CacheQuerierConn, arg ListUsersParams) ([]User, error) {
-	qctx, cancel := context.WithTimeout(ctx, time.Millisecond*1000)
-	defer cancel()
+	qctx := wpgx.WithDBTimeout(ctx, "users.ListUsers", time.Millisecond*1000)
 	q.GetConn().CountIntent("users.ListUsers")
 	rows, err := q.GetConn().WQuery(qctx, "users.ListUsers", listUsers, arg.After, arg.First)
 	if err != nil {
@@ -512,8 +504,7 @@ type UpdateMetaByIDParams struct {
 
 // -- timeout : 1s
 func (q *Queries) UpdateMetaByID(ctx context.Context, arg UpdateMetaByIDParams) (int64, error) {
-	qctx, cancel := context.WithTimeout(ctx, time.Millisecond*1000)
-	defer cancel()
+	qctx := wpgx.WithDBTimeout(ctx, "users.UpdateMetaByID", time.Millisecond*1000)
 	result, err := q.db.WExec(qctx, "users.UpdateMetaByID", updateMetaByID, arg.Metadata, arg.ID)
 	if err != nil {
 		return 0, err
@@ -542,8 +533,7 @@ func (q *Queries) UpdateNameByID(ctx context.Context, arg UpdateNameByIDParams) 
 }
 
 func _UpdateNameByID(ctx context.Context, q CacheQuerierConn, arg UpdateNameByIDParams) (*int32, error) {
-	qctx, cancel := context.WithTimeout(ctx, time.Millisecond*1000)
-	defer cancel()
+	qctx := wpgx.WithDBTimeout(ctx, "users.UpdateNameByID", time.Millisecond*1000)
 	row := q.GetConn().WQueryRow(qctx, "users.UpdateNameByID", updateNameByID, arg.Name, arg.ID)
 	var id *int32 = new(int32)
 	err := row.Scan(id)
@@ -571,8 +561,7 @@ type UpdateUserGradeParams struct {
 // -- invalidate : [GetUserByID]
 // -- timeout : 1s
 func (q *Queries) UpdateUserGrade(ctx context.Context, arg UpdateUserGradeParams, getUserByID *int32) (int64, error) {
-	qctx, cancel := context.WithTimeout(ctx, time.Millisecond*1000)
-	defer cancel()
+	qctx := wpgx.WithDBTimeout(ctx, "users.UpdateUserGrade", time.Millisecond*1000)
 	result, err := q.db.WExec(qctx, "users.UpdateUserGrade", updateUserGrade, arg.Grade, arg.Name)
 	if err != nil {
 		return 0, err
@@ -625,8 +614,7 @@ type UpsertUsersParams struct {
 
 // -- timeout : 1s
 func (q *Queries) UpsertUsers(ctx context.Context, arg UpsertUsersParams) error {
-	qctx, cancel := context.WithTimeout(ctx, time.Millisecond*1000)
-	defer cancel()
+	qctx := wpgx.WithDBTimeout(ctx, "users.UpsertUsers", time.Millisecond*1000)
 	_, err := q.db.WExec(qctx, "users.UpsertUsers", upsertUsers, arg.Name, arg.Metadata, arg.Image)
 	if err != nil {
 		return err

@@ -16,6 +16,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/rs/zerolog/log"
+	"github.com/stumble/wpgx"
 )
 
 const bulkUpdate = `-- name: BulkUpdate :exec
@@ -42,8 +43,7 @@ type BulkUpdateParams struct {
 
 // -- timeout : 1s
 func (q *Queries) BulkUpdate(ctx context.Context, arg BulkUpdateParams) error {
-	qctx, cancel := context.WithTimeout(ctx, time.Millisecond*1000)
-	defer cancel()
+	qctx := wpgx.WithDBTimeout(ctx, "orders.BulkUpdate", time.Millisecond*1000)
 	_, err := q.db.WExec(qctx, "orders.BulkUpdate", bulkUpdate, arg.ID, arg.Price, arg.BookID)
 	if err != nil {
 		return err
@@ -73,8 +73,7 @@ func (q *Queries) CreateAuthor(ctx context.Context, arg CreateAuthorParams) (*Or
 }
 
 func _CreateAuthor(ctx context.Context, q CacheQuerierConn, arg CreateAuthorParams) (*Order, error) {
-	qctx, cancel := context.WithTimeout(ctx, time.Millisecond*1000)
-	defer cancel()
+	qctx := wpgx.WithDBTimeout(ctx, "orders.CreateAuthor", time.Millisecond*1000)
 	row := q.GetConn().WQueryRow(qctx, "orders.CreateAuthor", createAuthor, arg.UserID, arg.BookID, arg.Price)
 	var i *Order = new(Order)
 	err := row.Scan(
@@ -105,8 +104,7 @@ WHERE
 // ListOrdersByUser
 // -- timeout : 1s
 func (q *Queries) DeleteOrder(ctx context.Context, id int32) error {
-	qctx, cancel := context.WithTimeout(ctx, time.Millisecond*1000)
-	defer cancel()
+	qctx := wpgx.WithDBTimeout(ctx, "orders.DeleteOrder", time.Millisecond*1000)
 	_, err := q.db.WExec(qctx, "orders.DeleteOrder", deleteOrder, id)
 	if err != nil {
 		return err
@@ -157,8 +155,7 @@ func (q *ReadOnlyQueries) GetOrderByID(ctx context.Context, id int32) (*GetOrder
 }
 
 func _GetOrderByID(ctx context.Context, q CacheQuerierConn, id int32) (*GetOrderByIDRow, error) {
-	qctx, cancel := context.WithTimeout(ctx, time.Millisecond*1000)
-	defer cancel()
+	qctx := wpgx.WithDBTimeout(ctx, "orders.GetOrderByID", time.Millisecond*1000)
 	q.GetConn().CountIntent("orders.GetOrderByID")
 	dbRead := func() (any, time.Duration, error) {
 		cacheDuration := time.Duration(time.Millisecond * 30000)
@@ -236,8 +233,7 @@ func (q *ReadOnlyQueries) ListOrders(ctx context.Context) (*ListOrdersRow, error
 }
 
 func _ListOrders(ctx context.Context, q CacheQuerierConn) (*ListOrdersRow, error) {
-	qctx, cancel := context.WithTimeout(ctx, time.Millisecond*1000)
-	defer cancel()
+	qctx := wpgx.WithDBTimeout(ctx, "orders.ListOrders", time.Millisecond*1000)
 	q.GetConn().CountIntent("orders.ListOrders")
 	dbRead := func() (any, time.Duration, error) {
 		cacheDuration := time.Duration(time.Millisecond * 30000)
@@ -307,8 +303,7 @@ func (q *ReadOnlyQueries) ListOrdersByGender(ctx context.Context, arg ListOrders
 }
 
 func _ListOrdersByGender(ctx context.Context, q CacheQuerierConn, arg ListOrdersByGenderParams) ([]Order, error) {
-	qctx, cancel := context.WithTimeout(ctx, time.Millisecond*1000)
-	defer cancel()
+	qctx := wpgx.WithDBTimeout(ctx, "orders.ListOrdersByGender", time.Millisecond*1000)
 	q.GetConn().CountIntent("orders.ListOrdersByGender")
 	dbRead := func() (any, time.Duration, error) {
 		cacheDuration := time.Duration(time.Millisecond * 60000)
@@ -374,8 +369,7 @@ func (q *ReadOnlyQueries) ListOrdersByUser(ctx context.Context, arg ListOrdersBy
 }
 
 func _ListOrdersByUser(ctx context.Context, q CacheQuerierConn, arg ListOrdersByUserParams) ([]Order, error) {
-	qctx, cancel := context.WithTimeout(ctx, time.Millisecond*1000)
-	defer cancel()
+	qctx := wpgx.WithDBTimeout(ctx, "orders.ListOrdersByUser", time.Millisecond*1000)
 	q.GetConn().CountIntent("orders.ListOrdersByUser")
 	rows, err := q.GetConn().WQuery(qctx, "orders.ListOrdersByUser", listOrdersByUser, arg.UserID, arg.After, arg.First)
 	if err != nil {
@@ -429,8 +423,7 @@ func (q *ReadOnlyQueries) ListOrdersByUserAndBook(ctx context.Context, arg ListO
 }
 
 func _ListOrdersByUserAndBook(ctx context.Context, q CacheQuerierConn, arg ListOrdersByUserAndBookParams) ([]Order, error) {
-	qctx, cancel := context.WithTimeout(ctx, time.Millisecond*1000)
-	defer cancel()
+	qctx := wpgx.WithDBTimeout(ctx, "orders.ListOrdersByUserAndBook", time.Millisecond*1000)
 	q.GetConn().CountIntent("orders.ListOrdersByUserAndBook")
 	rows, err := q.GetConn().WQuery(qctx, "orders.ListOrdersByUserAndBook", listOrdersByUserAndBook, arg.UserID, arg.BookID)
 	if err != nil {
