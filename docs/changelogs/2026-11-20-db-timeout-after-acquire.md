@@ -24,11 +24,15 @@ the generator change is in Stumble/sqlc
   the database fails with `wpgx.ErrDBTimeout` after its timeout; waiting for
   the pool's only connection longer than the timeout does not fail the query;
   an unresponsive Redis fails a cached read after the Redis client's
-  `ReadTimeout` (not the 250ms query timeout) and never falls through to the
-  database.
+  `ReadTimeout` (not the 250ms query timeout, and well before the caller's
+  deadline) and never falls through to the database. This needs dcache v0.3.0+
+  without Redis single flight, so the module moves from dcache v0.1.3 (Redis
+  single flight always on, go-redis v8) to v0.4.0 (go-redis v9), the version
+  every Alva service runs.
 - B3 — The module requires the wpgx release with `WithDBTimeout`; go 1.26 and
   the matching CI Go/lint versions follow from wpgx.
-- Non-goals: other dependency upgrades, other behavior.
+- Non-goals: dependency changes beyond wpgx and the dcache/go-redis move B2
+  needs; other behavior.
 
 ## 3. Research, Findings, and Architecture Decision
 
@@ -43,8 +47,9 @@ comes from the config).
 - `pkg/usecases/wicked_contract_test.go`: replace the two timeout contracts and
   add the pool-wait contract.
 - `pkg/usecases/usecase_test.go`: new `NewWPgxTestSuiteFromConfig` signature.
-- `go.mod`/`go.sum`: wpgx bump (pseudo-version of the wpgx branch until the
-  release is tagged).
+- `go.mod`/`go.sum`: dcache v0.1.3 → v0.4.0 with go-redis v8 → v9 (imports in
+  `internal/testenv` and tests); wpgx bump (pseudo-version of the wpgx branch
+  until the release is tagged).
 - `.github/workflows/go.yml`: Go from `go.mod` and a golangci-lint version that
   supports it.
 

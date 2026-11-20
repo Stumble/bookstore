@@ -6,11 +6,11 @@ toolchain go1.22.5
 
 require (
 	github.com/coocood/freecache v1.2.3
-	github.com/go-redis/redis/v8 v8.11.5
 	github.com/jackc/pgx/v5 v5.6.0
+	github.com/redis/go-redis/v9 v9.5.1
 	github.com/rs/zerolog v1.28.0
 	github.com/stretchr/testify v1.8.1
-	github.com/stumble/dcache v0.1.3
+	github.com/stumble/dcache v0.4.0
 	github.com/stumble/wpgx v0.3.1
 )
 

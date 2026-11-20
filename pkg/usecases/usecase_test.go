@@ -9,7 +9,7 @@ import (
 
 	// "github.com/jackc/pgx/v5/pgtype"
 	"github.com/coocood/freecache"
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 	"github.com/stretchr/testify/suite"
 	"github.com/stumble/dcache"
 	"github.com/stumble/wpgx"

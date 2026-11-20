@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 	"github.com/jackc/pgx/v5"
 	"github.com/stumble/bookstore/pkg/repos/activities"
 	"github.com/stumble/bookstore/pkg/repos/books"
@@ -242,27 +242,27 @@ func (s *usecaseTestSuite) unresponsiveRedis() string {
 	return listener.Addr().String()
 }
 
-// Cache lookups get the caller's context, not the 250ms query timeout, and a
-// failing cache never falls through to the database. This repository's dcache
-// (v0.1.3) always uses Redis single flight, which retries an unresponsive Redis
-// until the caller's deadline; dcache v0.3.0+ without that option fails after
-// the Redis client's own timeouts instead.
+// Cache lookups are bounded by the Redis client's own timeouts, not by the
+// 250ms query timeout: with dcache's default configuration (no Redis single
+// flight) an unresponsive Redis fails the read after the client's ReadTimeout,
+// well before the caller's deadline, without falling through to the database.
 func (s *usecaseTestSuite) TestWickedCacheTimeout() {
 	client := redis.NewClient(&redis.Options{
-		Addr: s.unresponsiveRedis(), ReadTimeout: 100 * time.Millisecond, MaxRetries: -1,
+		Addr: s.unresponsiveRedis(), ReadTimeout: 400 * time.Millisecond, MaxRetries: -1,
 	})
 	s.T().Cleanup(func() { _ = client.Close() })
 	cache, err := dcache.NewDCache("timeout", client, nil, 100*time.Millisecond, false, false)
 	s.Require().NoError(err)
 	s.T().Cleanup(cache.Close)
 	conn := &observedConn{WGConn: s.GetPool().WConn()}
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 	start := time.Now()
 	_, err = books.New(conn, cache).GetBookByID(ctx, 123)
 	elapsed := time.Since(start)
 	s.Require().Error(err)
-	s.GreaterOrEqual(elapsed, 900*time.Millisecond, "the 250ms query timeout does not cut the cache lookup")
-	s.Less(elapsed, 3*time.Second, "the caller's deadline bounds it")
+	s.GreaterOrEqual(elapsed, 350*time.Millisecond, "the 250ms query timeout does not cut the cache lookup")
+	s.Less(elapsed, 3*time.Second, "the client's ReadTimeout bounds the lookup")
+	s.NoError(ctx.Err(), "the caller's deadline is not what ended it")
 	s.Zero(conn.reads.Load(), "cache timeout must not fall through to a database read")
 }
