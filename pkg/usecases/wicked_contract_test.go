@@ -251,6 +251,8 @@ func (s *usecaseTestSuite) TestWickedCacheTimeout() {
 		Addr: s.unresponsiveRedis(), ReadTimeout: 400 * time.Millisecond, MaxRetries: -1,
 	})
 	s.T().Cleanup(func() { _ = client.Close() })
+	hook := &getDeadlineHook{}
+	client.AddHook(hook)
 	cache, err := dcache.NewDCache("timeout", client, nil, 100*time.Millisecond, false, false)
 	s.Require().NoError(err)
 	s.T().Cleanup(cache.Close)
@@ -265,4 +267,34 @@ func (s *usecaseTestSuite) TestWickedCacheTimeout() {
 	s.Less(elapsed, 3*time.Second, "the client's ReadTimeout bounds the lookup")
 	s.NoError(ctx.Err(), "the caller's deadline is not what ended it")
 	s.Zero(conn.reads.Load(), "cache timeout must not fall through to a database read")
+	// go-redis ignores context deadlines for socket I/O by default, so check the
+	// deadline handed to Redis: the caller's, not the query timeout.
+	s.Require().True(hook.seen.Load(), "the GET reached Redis")
+	s.Greater(time.Duration(hook.remaining.Load()), 5*time.Second)
+}
+
+// getDeadlineHook records the time left before the deadline of the context of
+// the first GET.
+type getDeadlineHook struct {
+	seen      atomic.Bool
+	remaining atomic.Int64
+}
+
+func (h *getDeadlineHook) DialHook(next redis.DialHook) redis.DialHook { return next }
+
+func (h *getDeadlineHook) ProcessHook(next redis.ProcessHook) redis.ProcessHook {
+	return func(ctx context.Context, cmd redis.Cmder) error {
+		if cmd.Name() == "get" && !h.seen.Swap(true) {
+			remaining := time.Duration(1<<63 - 1)
+			if deadline, ok := ctx.Deadline(); ok {
+				remaining = time.Until(deadline)
+			}
+			h.remaining.Store(int64(remaining))
+		}
+		return next(ctx, cmd)
+	}
+}
+
+func (h *getDeadlineHook) ProcessPipelineHook(next redis.ProcessPipelineHook) redis.ProcessPipelineHook {
+	return next
 }
