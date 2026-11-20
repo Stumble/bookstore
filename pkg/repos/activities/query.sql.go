@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
+	"github.com/stumble/wpgx"
 )
 
 type BulkInsertParams struct {
@@ -38,8 +39,7 @@ func (q *ReadOnlyQueries) GetActivitiesByAction(ctx context.Context, action stri
 }
 
 func _GetActivitiesByAction(ctx context.Context, q CacheQuerierConn, action string) ([]Activity, error) {
-	qctx, cancel := context.WithTimeout(ctx, time.Millisecond*250)
-	defer cancel()
+	qctx := wpgx.WithDBTimeout(ctx, "activities.GetActivitiesByAction", time.Millisecond*250)
 	q.GetConn().CountIntent("activities.GetActivitiesByAction")
 	dbRead := func() (any, time.Duration, error) {
 		cacheDuration := time.Duration(time.Millisecond * 60000)
@@ -95,8 +95,7 @@ type InsertParams struct {
 // -- timeout : 1s
 // -- invalidate : [GetActivitiesByAction]
 func (q *Queries) Insert(ctx context.Context, arg InsertParams, getActivitiesByAction *string) error {
-	qctx, cancel := context.WithTimeout(ctx, time.Millisecond*1000)
-	defer cancel()
+	qctx := wpgx.WithDBTimeout(ctx, "activities.Insert", time.Millisecond*1000)
 	_, err := q.db.WExec(qctx, "activities.Insert", insert, arg.Action, arg.Parameter)
 	if err != nil {
 		return err
