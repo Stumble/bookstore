@@ -144,8 +144,8 @@ github.com/stretchr/testify v1.12.1 h1:EuwCh5fleGS7H32xRwO3wRGT7DxrDhLAT6FF8MpWD
 github.com/stretchr/testify v1.12.1/go.mod h1:MDEgiDPPsNp5cuIrHPPCyornHKgEVbtFUmoNlxoYthg=
 github.com/stumble/dcache v0.4.0 h1:7Q1RoQFtN4i7N1rSDrzlSJLS/8UEw2QHv5jipYsPMZc=
 github.com/stumble/dcache v0.4.0/go.mod h1:Uf7I7QaT1cm1CPPeHRK1DSRiOdfweJyp0vN6VTIHNIQ=
-github.com/stumble/wpgx v0.5.2-0.20261120053742-4b29cac2136d h1:pbfcjUEfEmEWvlMiPY05C230gBezNBpjZ2aEJ+rV2fc=
-github.com/stumble/wpgx v0.5.2-0.20261120053742-4b29cac2136d/go.mod h1:8OzdIiJKnIXvnyF1iAjRCxkwQ6Qx1urY+cmGga0bSJE=
+github.com/stumble/wpgx v0.6.0 h1:ME1NkoBEhT5LouPCBFYqgZ/NywAF0FYrWZZy5zHf+6I=
+github.com/stumble/wpgx v0.6.0/go.mod h1:8OzdIiJKnIXvnyF1iAjRCxkwQ6Qx1urY+cmGga0bSJE=
 github.com/testcontainers/testcontainers-go v0.44.0 h1:/Fwh6HY1mIikhnm9e7HwoxGycx0lzRAE0f5VQpjFxzI=
 github.com/testcontainers/testcontainers-go v0.44.0/go.mod h1:IcnwQrYTO86xHXu5bvMaBH7ATlbS3Qn1M1QWW3c66rE=
 github.com/testcontainers/testcontainers-go/modules/postgres v0.44.0 h1:8fdv/9y3JMxjQ+ULAcOG8RtgeNu5t9XF9LolSXDuTwM=

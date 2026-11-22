@@ -9,7 +9,7 @@ require (
 	github.com/rs/zerolog v1.35.1
 	github.com/stretchr/testify v1.12.1
 	github.com/stumble/dcache v0.4.0
-	github.com/stumble/wpgx v0.5.2-0.20261120053742-4b29cac2136d
+	github.com/stumble/wpgx v0.6.0
 )
 
 require (

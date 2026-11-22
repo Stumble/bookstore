@@ -77,9 +77,9 @@ See the primary record, section 6.
   `TestWickedTimeoutExcludesPoolWait` and `TestWickedCacheTimeout` prove the
   database bound, the excluded pool wait, and the Redis-client bound with the
   caller's exact deadline handed to Redis. dcache v0.1.3 → v0.4.0 and
-  go-redis v8 → v9 (R1-06); wpgx pinned to
-  `v0.5.2-0.20261120053742-4b29cac2136d` (go 1.26.0); CI takes Go from go.mod
-  and lints with golangci-lint v2.14.0.
+  go-redis v8 → v9 (R1-06); wpgx pinned to the release `v0.6.0` (same code as
+  the reviewed `v0.5.2-0.20261120053742-4b29cac2136d`; go 1.26.0); CI takes Go
+  from go.mod and lints with golangci-lint v2.14.0.
 - Verification on 89b3fbc (`GOWORK=off GOMAXPROCS=2`): `go build ./...`,
   `go vet ./...`, `make sqlc sqlc-verify SQLC=<new sqlc>` and
   `git diff --exit-code -- pkg/repos`, `make test`, and
@@ -90,6 +90,16 @@ See the primary record, section 6.
 - Cross-agent review: primary record section 7 (final ACCEPT of 89b3fbc).
   Later changes here are record-only.
 
+- Release pin (2026-11-22 US Pacific): wpgx v0.6.0 tags merged Stumble/wpgx
+  `3673ea0`, whose tree equals the reviewed head `74cd7c8` (code as `4b29cac`).
+  With the pin, `go build ./...`, `go vet ./...`, `make test`,
+  `go test -race -count=1 -p 1 -timeout 10m ./pkg/usecases` (all ten suite
+  tests, including the three timeout contracts) pass; golangci-lint v2.14.0:
+  0 issues. Regenerating with sqlc built from merged Stumble/sqlc `be5161e1b`
+  is byte-identical with the CI version label and differs only in the version
+  comment with the v2.6.0 label.
+
 ## 8. Remaining Work
 
-- Before merge: bump the wpgx pin to the wpgx release tag.
+- None in this repository. Stumble/sqlc then points its `wicked` job at the
+  merged commit of this change.
