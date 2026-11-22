@@ -16,6 +16,7 @@ import (
 
 	"github.com/jackc/pgx/v5"
 	"github.com/rs/zerolog/log"
+	"github.com/stumble/wpgx"
 )
 
 type BulkInsertByCopyfromParams struct {
@@ -41,8 +42,7 @@ func (q *ReadOnlyQueries) GetAllBooks(ctx context.Context) ([]Book, error) {
 }
 
 func _GetAllBooks(ctx context.Context, q CacheQuerierConn) ([]Book, error) {
-	qctx, cancel := context.WithTimeout(ctx, time.Millisecond*250)
-	defer cancel()
+	qctx := wpgx.WithDBTimeout(ctx, "books.GetAllBooks", time.Millisecond*250)
 	q.GetConn().CountIntent("books.GetAllBooks")
 	dbRead := func() (any, time.Duration, error) {
 		cacheDuration := time.Duration(time.Millisecond * 600000)
@@ -102,8 +102,7 @@ func (q *ReadOnlyQueries) GetAllBooks2(ctx context.Context) ([]Book, error) {
 }
 
 func _GetAllBooks2(ctx context.Context, q CacheQuerierConn) ([]Book, error) {
-	qctx, cancel := context.WithTimeout(ctx, time.Millisecond*1000)
-	defer cancel()
+	qctx := wpgx.WithDBTimeout(ctx, "books.GetAllBooks2", time.Millisecond*1000)
 	q.GetConn().CountIntent("books.GetAllBooks2")
 	dbRead := func() (any, time.Duration, error) {
 		cacheDuration := time.Duration(time.Millisecond * 600000)
@@ -163,8 +162,7 @@ func (q *ReadOnlyQueries) GetBookByID(ctx context.Context, id int32) (*Book, err
 }
 
 func _GetBookByID(ctx context.Context, q CacheQuerierConn, id int32) (*Book, error) {
-	qctx, cancel := context.WithTimeout(ctx, time.Millisecond*250)
-	defer cancel()
+	qctx := wpgx.WithDBTimeout(ctx, "books.GetBookByID", time.Millisecond*250)
 	q.GetConn().CountIntent("books.GetBookByID")
 	dbRead := func() (any, time.Duration, error) {
 		cacheDuration := time.Duration(time.Millisecond * 600000)
@@ -216,8 +214,7 @@ func (q *ReadOnlyQueries) GetBookByNameMaybe(ctx context.Context, name *string) 
 }
 
 func _GetBookByNameMaybe(ctx context.Context, q CacheQuerierConn, name *string) ([]Book, error) {
-	qctx, cancel := context.WithTimeout(ctx, time.Millisecond*1000)
-	defer cancel()
+	qctx := wpgx.WithDBTimeout(ctx, "books.GetBookByNameMaybe", time.Millisecond*1000)
 	q.GetConn().CountIntent("books.GetBookByNameMaybe")
 	dbRead := func() (any, time.Duration, error) {
 		cacheDuration := time.Duration(time.Millisecond * 600000)
@@ -292,8 +289,7 @@ func (q *ReadOnlyQueries) GetBookBySpec(ctx context.Context, arg GetBookBySpecPa
 }
 
 func _GetBookBySpec(ctx context.Context, q CacheQuerierConn, arg GetBookBySpecParams) ([]Book, error) {
-	qctx, cancel := context.WithTimeout(ctx, time.Millisecond*250)
-	defer cancel()
+	qctx := wpgx.WithDBTimeout(ctx, "books.GetBookBySpec", time.Millisecond*250)
 	q.GetConn().CountIntent("books.GetBookBySpec")
 	dbRead := func() (any, time.Duration, error) {
 		cacheDuration := time.Duration(time.Millisecond * 600000)
@@ -357,8 +353,7 @@ type InsertParams struct {
 // -- invalidate : [GetAllBooks, GetAllBooks2]
 // -- timeout : 100ms
 func (q *Queries) Insert(ctx context.Context, arg InsertParams) error {
-	qctx, cancel := context.WithTimeout(ctx, time.Millisecond*100)
-	defer cancel()
+	qctx := wpgx.WithDBTimeout(ctx, "books.Insert", time.Millisecond*100)
 	_, err := q.db.WExec(qctx, "books.Insert", insert,
 		arg.Name,
 		arg.Description,
@@ -426,8 +421,7 @@ func (q *Queries) InsertAndReturnID(ctx context.Context, arg InsertAndReturnIDPa
 }
 
 func _InsertAndReturnID(ctx context.Context, q CacheWGConn, arg InsertAndReturnIDParams) (*int32, error) {
-	qctx, cancel := context.WithTimeout(ctx, time.Millisecond*250)
-	defer cancel()
+	qctx := wpgx.WithDBTimeout(ctx, "books.InsertAndReturnID", time.Millisecond*250)
 	row := q.GetConn().WQueryRow(qctx, "books.InsertAndReturnID", insertAndReturnID,
 		arg.Name,
 		arg.Description,
@@ -500,8 +494,7 @@ func (q *Queries) InsertReturnInvalidate(ctx context.Context, arg InsertReturnIn
 }
 
 func _InsertReturnInvalidate(ctx context.Context, q CacheWGConn, arg InsertReturnInvalidateParams, getBookByID *int32) (*int32, error) {
-	qctx, cancel := context.WithTimeout(ctx, time.Millisecond*250)
-	defer cancel()
+	qctx := wpgx.WithDBTimeout(ctx, "books.InsertReturnInvalidate", time.Millisecond*250)
 	row := q.GetConn().WQueryRow(qctx, "books.InsertReturnInvalidate", insertReturnInvalidate,
 		arg.Name,
 		arg.Description,
@@ -564,8 +557,7 @@ type InsertWithInvalidateParams struct {
 // -- timeout : 250ms
 // -- invalidate : [GetBookByNameMaybe, GetBookBySpec]
 func (q *Queries) InsertWithInvalidate(ctx context.Context, arg InsertWithInvalidateParams, getBookByNameMaybe **string, getBookBySpec *GetBookBySpecParams) error {
-	qctx, cancel := context.WithTimeout(ctx, time.Millisecond*250)
-	defer cancel()
+	qctx := wpgx.WithDBTimeout(ctx, "books.InsertWithInvalidate", time.Millisecond*250)
 	_, err := q.db.WExec(qctx, "books.InsertWithInvalidate", insertWithInvalidate,
 		arg.ID,
 		arg.Name,
@@ -643,8 +635,7 @@ func (q *ReadOnlyQueries) ListByCategory(ctx context.Context, arg ListByCategory
 }
 
 func _ListByCategory(ctx context.Context, q CacheQuerierConn, arg ListByCategoryParams) ([]Book, error) {
-	qctx, cancel := context.WithTimeout(ctx, time.Millisecond*1500)
-	defer cancel()
+	qctx := wpgx.WithDBTimeout(ctx, "books.ListByCategory", time.Millisecond*1500)
 	q.GetConn().CountIntent("books.ListByCategory")
 	rows, err := q.GetConn().WQuery(qctx, "books.ListByCategory", listByCategory, arg.Category, arg.After, arg.First)
 	if err != nil {
@@ -698,8 +689,7 @@ type PartialUpdateByIDParams struct {
 
 // -- timeout : 250ms
 func (q *Queries) PartialUpdateByID(ctx context.Context, arg PartialUpdateByIDParams) error {
-	qctx, cancel := context.WithTimeout(ctx, time.Millisecond*250)
-	defer cancel()
+	qctx := wpgx.WithDBTimeout(ctx, "books.PartialUpdateByID", time.Millisecond*250)
 	_, err := q.db.WExec(qctx, "books.PartialUpdateByID", partialUpdateByID,
 		arg.Description,
 		arg.Meta,
@@ -720,8 +710,7 @@ FROM PG_GET_SERIAL_SEQUENCE('books', 'id') as seq_name
 
 // -- timeout : 300ms
 func (q *Queries) RefreshIDSerial(ctx context.Context) error {
-	qctx, cancel := context.WithTimeout(ctx, time.Millisecond*300)
-	defer cancel()
+	qctx := wpgx.WithDBTimeout(ctx, "books.RefreshIDSerial", time.Millisecond*300)
 	_, err := q.db.WExec(qctx, "books.RefreshIDSerial", refreshIDSerial)
 	if err != nil {
 		return err
@@ -745,8 +734,7 @@ func (q *ReadOnlyQueries) SearchBooks(ctx context.Context, name string) ([]Book,
 }
 
 func _SearchBooks(ctx context.Context, q CacheQuerierConn, name string) ([]Book, error) {
-	qctx, cancel := context.WithTimeout(ctx, time.Millisecond*250)
-	defer cancel()
+	qctx := wpgx.WithDBTimeout(ctx, "books.SearchBooks", time.Millisecond*250)
 	q.GetConn().CountIntent("books.SearchBooks")
 	dbRead := func() (any, time.Duration, error) {
 		cacheDuration := time.Duration(time.Millisecond * 600000)
@@ -806,8 +794,7 @@ func (q *ReadOnlyQueries) SimpleCachedQuery(ctx context.Context) ([]Book, error)
 }
 
 func _SimpleCachedQuery(ctx context.Context, q CacheQuerierConn) ([]Book, error) {
-	qctx, cancel := context.WithTimeout(ctx, time.Millisecond*250)
-	defer cancel()
+	qctx := wpgx.WithDBTimeout(ctx, "books.SimpleCachedQuery", time.Millisecond*250)
 	q.GetConn().CountIntent("books.SimpleCachedQuery")
 	dbRead := func() (any, time.Duration, error) {
 		cacheDuration := time.Duration(time.Millisecond * 600000)
@@ -870,8 +857,7 @@ type UpdateBookByIDParams struct {
 // -- invalidate : [GetBookByID]
 // -- timeout : 1s
 func (q *Queries) UpdateBookByID(ctx context.Context, arg UpdateBookByIDParams, getBookByID *int32) error {
-	qctx, cancel := context.WithTimeout(ctx, time.Millisecond*1000)
-	defer cancel()
+	qctx := wpgx.WithDBTimeout(ctx, "books.UpdateBookByID", time.Millisecond*1000)
 	_, err := q.db.WExec(qctx, "books.UpdateBookByID", updateBookByID,
 		arg.Description,
 		arg.Meta,

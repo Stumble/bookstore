@@ -4,10 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"net"
+	"sync"
 	"sync/atomic"
 	"time"
 
-	"github.com/go-redis/redis/v8"
+	"github.com/redis/go-redis/v9"
 	"github.com/jackc/pgx/v5"
 	"github.com/stumble/bookstore/pkg/repos/activities"
 	"github.com/stumble/bookstore/pkg/repos/books"
@@ -171,61 +173,131 @@ func (s *usecaseTestSuite) TestWickedPointerKeysAndJSON() {
 	s.Equal("books:GetBookBySpec:contract%,<nil>,7", (books.GetBookBySpecParams{Name: &name, Dummy: &dummy}).CacheKey())
 }
 
-type deadlineConn struct {
-	wpgx.WGConn
-	remaining time.Duration
-}
-
-func (c *deadlineConn) WQuery(ctx context.Context, _ string, _ string, _ ...interface{}) (pgx.Rows, error) {
-	deadline, _ := ctx.Deadline()
-	c.remaining = time.Until(deadline)
-	<-ctx.Done()
-	return nil, ctx.Err()
-}
-
+// The 250ms timeout of SimpleCachedQuery bounds the statement in the database:
+// a statement blocked by a lock fails with wpgx.ErrDBTimeout long before the
+// caller's deadline.
 func (s *usecaseTestSuite) TestWickedDatabaseTimeout() {
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
-	conn := &deadlineConn{WGConn: s.GetPool().WConn()}
-	_, err := books.New(conn, nil).SimpleCachedQuery(ctx)
-	s.Require().ErrorIs(err, context.DeadlineExceeded)
-	s.Greater(conn.remaining, time.Duration(0))
-	s.LessOrEqual(conn.remaining, 250*time.Millisecond)
-	s.NoError(ctx.Err(), "the per-query deadline must fire before the parent deadline")
+	locker, err := s.GetPool().RawPrimaryPool().Begin(ctx)
+	s.Require().NoError(err)
+	defer func() { _ = locker.Rollback(context.Background()) }()
+	_, err = locker.Exec(ctx, "LOCK TABLE books IN ACCESS EXCLUSIVE MODE")
+	s.Require().NoError(err)
+
+	start := time.Now()
+	_, err = books.New(s.GetPool().WConn(), nil).SimpleCachedQuery(ctx)
+	elapsed := time.Since(start)
+	s.Require().ErrorIs(err, wpgx.ErrDBTimeout)
+	s.ErrorIs(err, context.DeadlineExceeded)
+	s.GreaterOrEqual(elapsed, 200*time.Millisecond)
+	s.Less(elapsed, 2*time.Second)
+	s.NoError(ctx.Err(), "the query timeout must fire before the caller's deadline")
 }
 
-type deadlineHook struct{ remaining atomic.Int64 }
+// The 250ms timeout starts once the query has a connection: waiting longer than
+// that for the pool's only connection does not fail the query.
+func (s *usecaseTestSuite) TestWickedTimeoutExcludesPoolWait() {
+	config := s.GetConfig()
+	config.MaxConns = 1
+	config.ReadReplicas = nil
+	pool, err := wpgx.NewPool(context.Background(), &config)
+	s.Require().NoError(err)
+	s.T().Cleanup(pool.Close)
+	held, err := pool.RawPrimaryPool().Acquire(context.Background())
+	s.Require().NoError(err)
+	time.AfterFunc(400*time.Millisecond, held.Release)
 
-func (h *deadlineHook) BeforeProcess(ctx context.Context, cmd redis.Cmder) (context.Context, error) {
-	if cmd.Name() == "get" {
-		deadline, _ := ctx.Deadline()
-		h.remaining.Store(int64(time.Until(deadline)))
-		<-ctx.Done()
-		return ctx, ctx.Err()
-	}
-	return ctx, nil
+	start := time.Now()
+	_, err = books.New(pool.WConn(), nil).SimpleCachedQuery(context.Background())
+	s.Require().NoError(err)
+	s.GreaterOrEqual(time.Since(start), 350*time.Millisecond)
 }
-func (h *deadlineHook) AfterProcess(context.Context, redis.Cmder) error { return nil }
-func (h *deadlineHook) BeforeProcessPipeline(ctx context.Context, _ []redis.Cmder) (context.Context, error) {
-	return ctx, nil
-}
-func (h *deadlineHook) AfterProcessPipeline(context.Context, []redis.Cmder) error { return nil }
 
+// unresponsiveRedis accepts connections and never answers.
+func (s *usecaseTestSuite) unresponsiveRedis() string {
+	listener, err := net.Listen("tcp", "127.0.0.1:0")
+	s.Require().NoError(err)
+	var mu sync.Mutex
+	var conns []net.Conn
+	s.T().Cleanup(func() {
+		_ = listener.Close()
+		mu.Lock()
+		defer mu.Unlock()
+		for _, c := range conns {
+			_ = c.Close()
+		}
+	})
+	go func() {
+		for {
+			c, err := listener.Accept()
+			if err != nil {
+				return
+			}
+			mu.Lock()
+			conns = append(conns, c)
+			mu.Unlock()
+		}
+	}()
+	return listener.Addr().String()
+}
+
+// Cache lookups are bounded by the Redis client's own timeouts, not by the
+// 250ms query timeout: with dcache's default configuration (no Redis single
+// flight) an unresponsive Redis fails the read after the client's ReadTimeout,
+// well before the caller's deadline, without falling through to the database.
 func (s *usecaseTestSuite) TestWickedCacheTimeout() {
-	client := redis.NewClient(&redis.Options{Addr: s.RedisConn.(*redis.Client).Options().Addr})
+	client := redis.NewClient(&redis.Options{
+		Addr: s.unresponsiveRedis(), ReadTimeout: 400 * time.Millisecond, MaxRetries: -1,
+	})
 	s.T().Cleanup(func() { _ = client.Close() })
-	hook := &deadlineHook{}
+	hook := &getDeadlineHook{}
 	client.AddHook(hook)
 	cache, err := dcache.NewDCache("timeout", client, nil, 100*time.Millisecond, false, false)
 	s.Require().NoError(err)
 	s.T().Cleanup(cache.Close)
 	conn := &observedConn{WGConn: s.GetPool().WConn()}
-	ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
+	start := time.Now()
 	_, err = books.New(conn, cache).GetBookByID(ctx, 123)
+	elapsed := time.Since(start)
 	s.Require().Error(err)
-	s.Greater(hook.remaining.Load(), int64(0))
-	s.LessOrEqual(hook.remaining.Load(), int64(250*time.Millisecond))
+	s.GreaterOrEqual(elapsed, 350*time.Millisecond, "the 250ms query timeout does not cut the cache lookup")
+	s.Less(elapsed, 3*time.Second, "the client's ReadTimeout bounds the lookup")
+	s.NoError(ctx.Err(), "the caller's deadline is not what ended it")
 	s.Zero(conn.reads.Load(), "cache timeout must not fall through to a database read")
-	s.NoError(ctx.Err())
+	// go-redis ignores context deadlines for socket I/O by default, so check the
+	// deadline handed to Redis: exactly the caller's, not the query timeout and
+	// not none.
+	s.Require().True(hook.seen.Load(), "the GET reached Redis")
+	callerDeadline, _ := ctx.Deadline()
+	s.Require().True(hook.hasDeadline.Load(), "the GET kept the caller's deadline")
+	s.True(callerDeadline.Equal(time.Unix(0, hook.deadline.Load())),
+		"the GET's deadline is the caller's")
+}
+
+// getDeadlineHook records the deadline of the context of the first GET.
+type getDeadlineHook struct {
+	seen        atomic.Bool
+	hasDeadline atomic.Bool
+	deadline    atomic.Int64 // UnixNano
+}
+
+func (h *getDeadlineHook) DialHook(next redis.DialHook) redis.DialHook { return next }
+
+func (h *getDeadlineHook) ProcessHook(next redis.ProcessHook) redis.ProcessHook {
+	return func(ctx context.Context, cmd redis.Cmder) error {
+		if cmd.Name() == "get" && !h.seen.Swap(true) {
+			if deadline, ok := ctx.Deadline(); ok {
+				h.deadline.Store(deadline.UnixNano())
+				h.hasDeadline.Store(true)
+			}
+		}
+		return next(ctx, cmd)
+	}
+}
+
+func (h *getDeadlineHook) ProcessPipelineHook(next redis.ProcessPipelineHook) redis.ProcessPipelineHook {
+	return next
 }

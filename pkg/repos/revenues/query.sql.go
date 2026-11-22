@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
+	"github.com/stumble/wpgx"
 )
 
 const getTopItems = `-- name: GetTopItems :many
@@ -34,8 +35,7 @@ func (q *ReadOnlyQueries) GetTopItems(ctx context.Context) ([]ByBookRevenue, err
 }
 
 func _GetTopItems(ctx context.Context, q CacheQuerierConn) ([]ByBookRevenue, error) {
-	qctx, cancel := context.WithTimeout(ctx, time.Millisecond*250)
-	defer cancel()
+	qctx := wpgx.WithDBTimeout(ctx, "revenues.GetTopItems", time.Millisecond*250)
 	q.GetConn().CountIntent("revenues.GetTopItems")
 	rows, err := q.GetConn().WQuery(qctx, "revenues.GetTopItems", getTopItems)
 	if err != nil {
@@ -71,8 +71,7 @@ REFRESH MATERIALIZED VIEW CONCURRENTLY by_book_revenues
 
 // -- timeout : 250ms
 func (q *Queries) Refresh(ctx context.Context) error {
-	qctx, cancel := context.WithTimeout(ctx, time.Millisecond*250)
-	defer cancel()
+	qctx := wpgx.WithDBTimeout(ctx, "revenues.Refresh", time.Millisecond*250)
 	_, err := q.db.WExec(qctx, "revenues.Refresh", refresh)
 	if err != nil {
 		return err
